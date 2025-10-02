@@ -4,44 +4,28 @@ import mysql.connector
 # Flask 앱 생성
 app = Flask(__name__)
 
-# 데이터베이스 접속 정보 (본인 설정에 맞게 수정)
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'root',
-    'database': 'projectdb'
-}
+def get_conn():
+    return mysql.connector.connect(
+        host="127.0.0.1",      # 또는 DB 서버 주소
+        user="root",           # MySQL 사용자
+        password="root",     # MySQL 비밀번호
+        database="projectdb",  # 스키마명 (예: projectdb)
+        charset="utf8mb4"
+    )
 
 # '/users' 경로에 접속하면 회원 목록을 보여주는 함수
-@app.route('/users')
-def user_list():
-    conn = None
-    cursor = None
+@app.route("/users")
+def users_list():
+    conn = get_conn()
     try:
-        # 데이터베이스 연결
-        conn = mysql.connector.connect(**db_config)
-        # 커서 생성 (결과를 딕셔너리 형태로 받기 위해 dictionary=True 설정)
-        cursor = conn.cursor(dictionary=True)
-        
-        # User 테이블의 모든 정보 조회
-        cursor.execute("SELECT userid, user_name, id, email, join_date FROM User")
-        
-        # 조회된 모든 데이터 가져오기
-        users = cursor.fetchall()
-        
-        # users.html 템플릿에 users 데이터를 담아 웹페이지로 보여주기
-        return render_template('users.html', users=users)
-
-    except Exception as e:
-        return f"데이터베이스 연결 오류: {e}"
-    
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT userid, user_name, id, email, join_date FROM User;")
+        users = cur.fetchall()   # [{ 'userid':1, 'user_name':'...', ... }, ...]
     finally:
-        # 연결 및 커서 종료
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        cur.close()
+        conn.close()
 
-# 이 파일이 직접 실행될 때 Flask 서버 구동
-if __name__ == '__main__':
+    return render_template("users.html", users=users)
+
+if __name__ == "__main__":
     app.run(debug=True)
