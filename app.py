@@ -9,7 +9,7 @@ db_config = {
     'host': '127.0.0.1',
     'user': 'root',
     'password': '0826',
-    'database': 'mydb'
+    'database': 'projectdb'
 }
 
 # '/users' 경로에 접속하면 회원 목록을 보여주는 함수
