@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 import mysql.connector
 import os
+from datetime import date
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -51,19 +52,24 @@ def register_page():
 def register():
     data = request.form
     username = data.get('id')
-    password = data.get('password')  # 평문
+    password = data.get('password')
     name = data.get('name')
     email = data.get('email')
     phone = data.get('tel')
+    address = data.get('address')
 
-    if not all([username, password, name, email, phone]):
+    if not all([username, password, name, email, phone, address]):
         return render_template('register.html', error="모든 필드를 입력해주세요.")
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        sql = "INSERT INTO User (id, password, user_name, email, phone_number) VALUES (%s,%s,%s,%s,%s)"
-        cursor.execute(sql, (username, password, name, email, phone))
+        today = date.today().strftime('%Y-%m-%d')
+        sql = """
+            INSERT INTO User (id, password, user_name, email, phone_number, address, join_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(sql, (username, password, name, email, phone, address, today))
         conn.commit()
         flash("회원가입이 완료되었습니다. 로그인 해주세요.", "success")
         return redirect(url_for('login_page'))
@@ -269,7 +275,6 @@ def notifications_page():
         cursor.close()
         conn.close()
     return render_template('notifications.html', notifications=notifications, session=session)
-
 
 
 if __name__ == '__main__':

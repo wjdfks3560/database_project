@@ -1,13 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>회원가입</h1>
-{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-<form method="POST" action="{{ url_for('register') }}">
-    <label>아이디: <input type="text" name="id"></label><br>
-    <label>비밀번호: <input type="password" name="password"></label><br>
-    <label>이름: <input type="text" name="name"></label><br>
-    <label>이메일: <input type="email" name="email"></label><br>
-    <label>전화번호: <input type="text" name="tel"></label><br>
-    <button type="submit">회원가입</button>
-</form>
+<!-- 
+  [장점 결합 1: 완벽한 중앙 정렬]
+  Flexbox를 사용하여 폼 컨테이너를 화면의 수직 및 수평 정중앙에 배치합니다.
+  min-height: calc(100vh - 100px)는 뷰포트 높이에서 위아래 여백을 약간 주어 너무 꽉 차지 않게 합니다.
+  이는 base.html의 스타일에 영향을 받지 않는 가장 안정적인 정렬 방식입니다.
+-->
+<div style="display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 100px); background-color: #f9f9f9; padding: 20px;">
+
+    <!-- 
+      [장점 결합 2: 세련된 디자인]
+      가독성 좋은 최대 너비(max-width)와 그림자 효과(box-shadow), 둥근 모서리(border-radius)를 적용하여
+      깔끔하고 현대적인 디자인의 폼 컨테이너를 만듭니다.
+      box-sizing: border-box;는 패딩이 너비에 영향을 주지 않도록 하는 중요한 속성입니다.
+    -->
+    <div style="max-width: 420px; width: 100%; padding: 35px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); background: #fff; box-sizing: border-box;">
+
+        <h1 style="text-align: center; color: #FF1B8D; margin-bottom: 30px; font-size: 26px;">회원가입</h1>
+
+        <!-- 
+          [장점 결합 3: 모든 메시지 처리]
+          단순 error 메시지뿐만 아니라, Flask의 get_flashed_messages 기능을 완벽하게 지원하여
+          회원가입 성공, 실패 등 다양한 상황에 맞는 피드백을 사용자에게 보여줄 수 있습니다.
+        -->
+        {% if error %}
+            <p style="color: #d9534f; text-align: center; margin-bottom: 15px;">{{ error }}</p>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                    <p style="color: {% if category=='success' %}#5cb85c{% else %}#d9534f{% endif %}; text-align: center; margin-bottom: 15px;">{{ msg }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 
+          [장점 결합 4: 효율적인 내부 레이아웃]
+          form 태그 자체를 Flexbox 컨테이너로 만들고 'gap' 속성을 사용합니다.
+          각 입력 필드에 'margin'을 개별적으로 설정하는 대신, 'gap' 하나로 모든 요소 사이의 간격을
+          일관되고 깔끔하게 관리합니다. 이는 가장 현대적이고 유지보수가 쉬운 방식입니다.
+        -->
+        <form method="POST" action="{{ url_for('register') }}" style="display: flex; flex-direction: column; gap: 15px;">
+            
+            <!-- 
+              입력 필드 스타일: 100% 너비와 box-sizing을 통해 부모 요소에 꽉 차도록 하고,
+              focus 상태일 때 테두리 색이 바뀌는 효과를 추가하여 사용자 경험을 향상시켰습니다.
+            -->
+            <style>
+                .form-input {
+                    width: 100%;
+                    padding: 12px 15px;
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                    box-sizing: border-box;
+                    font-size: 16px;
+                    transition: border-color 0.3s, box-shadow 0.3s;
+                }
+                .form-input:focus {
+                    outline: none;
+                    border-color: #FF1B8D;
+                    box-shadow: 0 0 0 3px rgba(255, 27, 141, 0.15);
+                }
+            </style>
+
+            <input type="text" name="id" placeholder="아이디" required class="form-input">
+            <input type="password" name="password" placeholder="비밀번호" required class="form-input">
+            <input type="text" name="name" placeholder="이름" required class="form-input">
+            <input type="email" name="email" placeholder="이메일" required class="form-input">
+            <input type="text" name="tel" placeholder="전화번호" required class="form-input">
+            <input type="text" name="address" placeholder="주소" required class="form-input">
+
+            <!-- 
+              버튼 스타일: 마우스를 올렸을 때(hover) 배경색이 부드럽게 변하는 'transition' 효과와
+              클릭하는 느낌을 주는 active 효과를 추가하여 상호작용성을 높였습니다.
+            -->
+            <button type="submit" style="width: 100%; padding: 14px; background-color: #FF1B8D; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: background-color 0.3s, transform 0.1s;">
+                회원가입
+            </button>
+            <style>
+                button[type="submit"]:hover { background-color: #e0157a; }
+                button[type="submit"]:active { transform: scale(0.99); }
+            </style>
+        </form>
+
+        <!-- [장점 결합 5: 사용자 편의 기능] 이미 계정이 있는 사용자를 위해 로그인 페이지로 안내하는 링크를 제공합니다. -->
+        <p style="text-align: center; margin-top: 20px; font-size: 14px; color: #555;">
+            이미 계정이 있으신가요? <a href="{{ url_for('login_page') }}" style="color: #FF1B8D; text-decoration: none; font-weight: 600;">로그인</a>
+        </p>
+    </div>
+</div>
 {% endblock %}
+

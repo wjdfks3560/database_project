@@ -32,7 +32,8 @@
     <div class="wrapper">
         <header class="header">
             <div class="header-top">
-                <div class="logo logo-gradient">현란밈장터</div>
+                <!-- [수정된 부분] 기존 div 태그를 a 태그로 변경하고, href 속성을 추가하여 메인 페이지로 이동하는 링크를 만들었습니다. -->
+                <a href="{{ url_for('main_page') }}" class="logo logo-gradient">현란밈장터</a>
                 <div class="search-bar">
                     <input type="text" placeholder="상품명, 지역, @상점명 입력">
                 </div>
@@ -67,3 +68,4 @@
     </div>
 </body>
 </html>
+

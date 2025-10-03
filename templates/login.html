@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>로그인</h1>
-<form method="POST" action="{{ url_for('login') }}">
-    <label>아이디: <input type="text" name="id"></label><br>
-    <label>비밀번호: <input type="password" name="password"></label><br>
-    <button type="submit">로그인</button>
-</form>
+<div style="max-width:400px; margin:50px auto; padding:30px; border:1px solid #eee; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1); background:#fff;">
+    <h1 style="text-align:center; color:#FF1B8D; margin-bottom:20px;">로그인</h1>
+    {% if error %}
+        <p style="color:red; text-align:center;">{{ error }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('login') }}" style="display:flex; flex-direction:column; gap:15px;">
+        <input type="text" name="id" placeholder="아이디" required style="padding:10px; border:1px solid #ccc; border-radius:6px; font-size:16px;">
+        <input type="password" name="password" placeholder="비밀번호" required style="padding:10px; border:1px solid #ccc; border-radius:6px; font-size:16px;">
+        <button type="submit" style="padding:12px; border:none; border-radius:6px; background:#FF1B8D; color:white; font-weight:bold; cursor:pointer; font-size:16px;">로그인</button>
+    </form>
+    <p style="text-align:center; margin-top:15px;">계정이 없으신가요? <a href="{{ url_for('register_page') }}" style="color:#FF1B8D; font-weight:bold;">회원가입</a></p>
+</div>
 {% endblock %}
