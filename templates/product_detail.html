@@ -1,34 +1,176 @@
 {% extends "base.html" %}
+{% block title %}{{ product.title }} - 상품 상세 | 현란밈장터{% endblock %}
+
+{% block head_extra %}
+<style>
+  :root{--line:#cfd6e4;--text:#1f2937;--muted:#6b7280;--brand:#1b4dff;--bg:#f7f8fc;--card:#fff;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Noto Sans KR",sans-serif;color:var(--text);background:var(--bg)}
+  .container{max-width:1100px;margin:16px auto;padding:0 16px}
+  .titlebar{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}
+  .breadcrumbs{font-size:13px;color:var(--muted)}
+  .titlebar h1{font-size:20px}
+  .view{font-size:13px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:0.95fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+  .gallery{padding:12px}
+  .thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .thumbs img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  .photo{width:100%;aspect-ratio:4/3;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#eef2ff}
+  .photo img{width:100%;height:100%;object-fit:cover}
+  .info{padding:14px;display:flex;flex-direction:column;gap:12px}
+  .price-row{display:flex;justify-content:space-between;align-items:center}
+  .price{font-size:22px;font-weight:800}
+  .zzim-count{font-size:13px;color:var(--muted)}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .meta{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .meta b{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .btns{display:flex;gap:10px}
+  .btn{border:none;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer}
+  .btn-like{background:#fff;border:1px solid var(--line)}
+  .btn-buy{background:var(--brand);color:#fff;flex:1}
+  .desc-card{margin-top:14px;padding:16px}
+  .desc-card h3{font-size:16px;margin-bottom:8px}
+  .desc{white-space:pre-wrap;line-height:1.6}
+  .comments header{display:flex;justify-content:space-between;align-items:center}
+  .toggle{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+  .comment-wrap{overflow:hidden;transition:max-height .25s ease}
+  .comment-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .comment{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .comment small{color:var(--muted)}
+  .comment-box{display:flex;gap:8px;margin-top:10px}
+  .comment-box input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .comment-box button{border:none;background:var(--brand);color:#fff;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+  @media(max-width:900px){ .grid{grid-template-columns:1fr} }
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>{{ product.title }}</h1>
-<div class="product-images">
-    {% for img in images %}
-        <img src="{{ img.image_url }}" width="200">
-    {% endfor %}
-</div>
-<p>판매자: {{ seller.user_name }}</p>
-<p>가격: {{ "{:,}".format(product.price) }}원</p>
-<p>상태: {{ product.Product_status }}</p>
+<main class="container">
+  <div class="titlebar">
+    <div>
+      <div class="breadcrumbs">
+        {{ product.category_name or ('카테고리 #' ~ product.category_id) }}
+      </div>
+      <h1>{{ product.title }}</h1>
+    </div>
+    <div class="view">조회수 {{ product.view }}</div>
+  </div>
 
-{% if session.get('user_id') %}
-    {% if is_wish %}
-        <form method="POST" action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
-            <button type="submit">찜 취소</button>
-        </form>
-    {% else %}
-        <form method="POST" action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
-            <button type="submit">찜하기</button>
-        </form>
-    {% endif %}
-{% endif %}
+  <section class="grid">
+    <!-- 좌측: 이미지 + 댓글 -->
+    <div>
+      <section class="card gallery">
+        <div class="photo">
+          <img
+            src="{{ (images and images[0].image_url) or product.image_url or 'https://picsum.photos/900/675?blur' }}"
+            alt="상품 이미지">
+        </div>
+        {% if images %}
+          <div class="thumbs">
+            {% for img in images %}
+              <img src="{{ img.image_url }}" alt="이미지 썸네일">
+            {% endfor %}
+          </div>
+        {% endif %}
+      </section>
 
-<h2>리뷰</h2>
-{% if reviews %}
-    {% for r in reviews %}
-        <p>{{ r.buyer_name }}: {{ r.rating }}/5</p>
-        <p>{{ r.comment }}</p>
-    {% endfor %}
-{% else %}
-    <p>등록된 리뷰가 없습니다.</p>
-{% endif %}
+      <!-- 댓글 -->
+      <section class="card desc-card" id="comments">
+        <header>
+          <h3>댓글</h3>
+          <button id="toggleBtn" class="toggle" aria-expanded="false">댓글 펼치기</button>
+        </header>
+        <div id="commentWrap" class="comment-wrap" style="max-height:0;">
+          <div class="comment-list">
+            {% if comments and comments|length %}
+              {% for c in comments %}
+                <div class="comment">
+                  {{ c.content }}<br>
+                  <small>{{ c.author }} · {{ c.created_at }}</small>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="comment">첫 댓글을 남겨보세요!</div>
+            {% endif %}
+          </div>
+
+          <!-- add_comment 라우트로 POST -->
+          <form class="comment-box" action="{{ url_for('add_comment', product_id=product.product_id) }}" method="post">
+            <input type="text" name="author" placeholder="닉네임(선택)">
+            <input type="text" name="content" placeholder="문의 내용을 입력하세요" required>
+            <button type="submit">등록</button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- 우측: 상품 정보 -->
+    <section class="card info">
+      <div class="price-row">
+        <div class="price">{{ "{:,}".format(product.price|int) }}원</div>
+        <div class="zzim-count">찜 {{ product.wish_count or 0 }}</div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta"><b>판매자</b>{{ seller.user_name }}</div>
+        <div class="meta"><b>상품 상태</b>{{ product.Product_status }}</div>
+        <div class="meta"><b>카테고리</b>{{ product.category_name or ('#' ~ product.category_id) }}</div>
+      </div>
+
+      <!-- 찜/구매 버튼 -->
+      <div class="btns">
+        {% if session.get('user_id') %}
+          {% if is_wish %}
+            <form method="POST" action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
+              <button class="btn btn-like" type="submit">♥ 찜 취소</button>
+            </form>
+          {% else %}
+            <form method="POST" action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
+              <button class="btn btn-like" type="submit">♡ 찜하기</button>
+            </form>
+          {% endif %}
+        {% endif %}
+
+        <!-- wish_count 단순 카운터(선택) -->
+        <form action="{{ url_for('add_wish_counter', product_id=product.product_id) }}" method="post">
+          <button class="btn btn-like" type="submit">♡ 카운트+</button>
+        </form>
+
+        <button class="btn btn-buy" type="button">구매하기</button>
+      </div>
+
+      <!-- 상품 설명 -->
+      <section class="card desc-card">
+        <h3>상품 정보</h3>
+        <div class="desc">{{ product.description }}</div>
+      </section>
+    </section>
+  </section>
+</main>
+
+<script>
+  // 댓글 토글
+  const wrap=document.getElementById('commentWrap');
+  const btn=document.getElementById('toggleBtn');
+  if(btn && wrap){
+    btn.addEventListener('click',()=>{
+      const isOpen=btn.getAttribute('aria-expanded')==='true';
+      if(isOpen){
+        wrap.style.maxHeight='0px';
+        btn.setAttribute('aria-expanded','false');
+        btn.textContent='댓글 펼치기';
+      }else{
+        wrap.style.maxHeight=wrap.scrollHeight+'px';
+        btn.setAttribute('aria-expanded','true');
+        btn.textContent='댓글 접기';
+      }
+    });
+    window.addEventListener('resize',()=>{
+      if(btn.getAttribute('aria-expanded')==='true'){
+        wrap.style.maxHeight=wrap.scrollHeight+'px';
+      }
+    });
+  }
+</script>
 {% endblock %}

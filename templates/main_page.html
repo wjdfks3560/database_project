@@ -1,14 +1,16 @@
 {% extends "base.html" %}
+{% block title %}현란밈장터 - 오늘의 추천 상품{% endblock %}
+
 {% block content %}
 <h1>오늘의 추천 상품</h1>
 <div class="product-grid">
     {% if products %}
         {% for p in products %}
             <a class="product-card" href="{{ url_for('product_detail', product_id=p.product_id) }}">
-                <div class="product-image" {% if p.image_url %} style="background-image:url('{{ p.image_url }}');" {% endif %}></div>
+                <div class="product-image"{% if p.image_url %} style="background-image:url('{{ p.image_url }}');"{% endif %}></div>
                 <div class="product-info">
                     <div class="product-title">{{ p.title }}</div>
-                    <div class="product-price">{{ "{:,}".format(p.price) }}원</div>
+                    <div class="product-price">{{ "{:,}".format(p.price|int) }}원</div>
                 </div>
             </a>
         {% endfor %}
