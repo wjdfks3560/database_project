@@ -8,7 +8,7 @@ app = Flask(__name__)
 db_config = {
     'host': 'localhost',
     'user': 'root',              # DB 사용자 이름
-    'password': 'root',          # DB 비밀번호 (본인 설정에 맞게 수정)
+    'password': '0826',          # DB 비밀번호 (본인 설정에 맞게 수정)
     'database': 'projectdb'      # 사용할 데이터베이스 이름
 }
 
@@ -23,25 +23,29 @@ def main_page():
 
         # 상품 목록을 가져오는 SQL 쿼리
         sql = """
-            SELECT 
-                p.product_id, p.title, p.price, pi.image_url
-            FROM 
-                Product p
-            LEFT JOIN 
-                (SELECT product_id, MIN(image_id) as min_image_id FROM product_image GROUP BY product_id) p_first_image
-                ON p.product_id = p_first_image.product_id
-            LEFT JOIN 
-                product_image pi ON pi.image_id = p_first_image.min_image_id
-            -- WHERE p.status = '판매중'  <- 이 부분을 제거했습니다.
-            ORDER BY 
-                p.product_id DESC 
-            LIMIT 10;
+            SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price
+            FROM Product p
+            ORDER BY COALESCE(p.view,0) DESC, p.product_id DESC
+            LIMIT 8
+        
+        """
+        # 위에 내용은 이미지 파일 없을 때, 아래는 이미지 추가한 후
+        """
+            SELECT p.product_id, p.title, CAST(p.price AS USIGNED) AS price
+            FROM Product p
+            LEFT JOIN (
+                SELECT product_id, MIN(image_id) AS min_image_id
+                FROM product_image
+                GROUP BY product_id
+            ) f ON p.product_id = f.product_id
+            LEFT JOIN product_image pi ON pi.image_id = f.min_image_id
+            ORDER BY p.view DESC, p.product_id DESC   -- views 컬럼명 다르면 교체
+            LIMIT 8;
         """
         cursor.execute(sql)
         products = cursor.fetchall()
 
-        for product in products:
-            product['price'] = f"{product['price']:,}원"
+        
 
     except mysql.connector.Error as err:
         print(f"데이터베이스 오류: {err}")
@@ -52,7 +56,7 @@ def main_page():
             cursor.close()
             conn.close()
     
-    return render_template('mainPage.html', products=products)
+    return render_template('main_page.html', products=products)
 
 # 회원가입 페이지를 보여주는 경로
 @app.route('/register_page')
