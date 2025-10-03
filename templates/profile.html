@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>내 프로필</h1>
+<p>아이디: {{ user.id }}</p>
+<p>이름: {{ user.user_name }}</p>
+<p>이메일: {{ user.email }}</p>
+<p>전화번호: {{ user.phone_number }}</p>
+<p>자기소개: {{ profile.bio if profile else '' }}</p>
+<p>평점: {{ profile.rating if profile else '' }}</p>
+{% endblock %}

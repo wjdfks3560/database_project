@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>알림</h1>
+{% if notifications %}
+<ul>
+{% for n in notifications %}
+    <li>{{ n.type }} - <a href="{{ n.related_url }}">{{ n.related_url }}</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>알림이 없습니다.</p>
+{% endif %}
+{% endblock %}

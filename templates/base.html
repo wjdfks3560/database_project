@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현란밈장터</title>
+    <style>
+        body, h1, p, div, ul, li { margin:0; padding:0; box-sizing:border-box; font-family:'Malgun Gothic',sans-serif; background-color:#fff;}
+        a { text-decoration:none; color:inherit;}
+        .wrapper { width:1024px; margin:0 auto; }
+        .header { padding:20px 0; border-bottom:1px solid #f0f0f0; }
+        .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .logo { font-size:24px; font-weight:bold; color:#FF1B8D; }
+        .logo-gradient { background-image:linear-gradient(45deg,#ffb3ba,#ffdfba,#ffffba,#baffc9,#bae1ff); background-clip:text; -webkit-background-clip:text; color:transparent; font-weight:bold; }
+        .search-bar { flex-grow:1; margin:0 20px; border:2px solid #FF1B8D; border-radius:4px; overflow:hidden; }
+        .search-bar input { width:100%; border:none; padding:10px 15px; font-size:16px; }
+        .header-menu { display:flex; gap:15px; font-size:14px; color:#333; align-items:center; }
+        .product-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:20px; }
+        .product-card { border:1px solid #eee; border-radius:4px; overflow:hidden; cursor:pointer; transition:box-shadow .2s;}
+        .product-card:hover { box-shadow:0 4px 8px rgba(0,0,0,.1);}
+        .product-image { width:100%; height:180px; background-color:#f0f0f0; background-size:cover; background-position:center; }
+        .product-info { padding:10px; }
+        .product-title { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:5px;}
+        .product-price { font-size:16px; font-weight:bold; }
+        .flash { padding:10px; margin:10px 0; border-radius:4px; }
+        .flash-success { background-color:#d4edda; color:#155724; }
+        .flash-warning { background-color:#fff3cd; color:#856404; }
+        .flash-info { background-color:#cce5ff; color:#004085; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <header class="header">
+            <div class="header-top">
+                <div class="logo logo-gradient">현란밈장터</div>
+                <div class="search-bar">
+                    <input type="text" placeholder="상품명, 지역, @상점명 입력">
+                </div>
+                <div class="header-menu">
+                    {% if session.get('user_id') %}
+                        <a href="{{ url_for('wishlist_page') }}">찜</a>
+                        <a href="{{ url_for('orders_page') }}">주문내역</a>
+                        <a href="{{ url_for('profile_page') }}">내 프로필</a>
+                        <a href="{{ url_for('notifications_page') }}">알림</a>
+                        <span>{{ session.username }}님</span>
+                        <a href="{{ url_for('logout') }}">로그아웃</a>
+                    {% else %}
+                        <a href="{{ url_for('login_page') }}">로그인</a>
+                        <a href="{{ url_for('register_page') }}">회원가입</a>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

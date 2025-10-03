@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>찜한 상품</h1>
+<div class="product-grid">
+{% if products %}
+  {% for p in products %}
+    <a href="{{ url_for('product_detail', product_id=p.product_id) }}">
+      <div class="product-image" {% if p.image_url %} style="background-image:url('{{ p.image_url }}');" {% endif %}></div>
+      <div class="product-title">{{ p.title }}</div>
+      <div class="product-price">{{ "{:,}".format(p.price) }}원</div>
+    </a>
+  {% endfor %}
+{% else %}
+  <div>찜한 상품이 없습니다.</div>
+{% endif %}
+</div>
+{% endblock %}
