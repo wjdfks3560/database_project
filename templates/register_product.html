@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>물품 등록 페이지</title>
+    <style>
+        /* 기본 스타일 */
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        /* 폼 전체를 감싸는 컨테이너 */
+        .form-container {
+            width: 1000px;
+            background-color: white;
+            padding: 30px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        h1 {
+            font-size: 24px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* 폼 레이아웃 (Flexbox 사용) */
+        .form-layout {
+            display: flex;
+            gap: 30px;
+        }
+
+        .form-left, .form-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-left {
+            width: 65%;
+        }
+
+        .form-right {
+            width: 35%;
+        }
+
+        /* 폼 그룹 스타일 */
+        .form-group {
+            display: flex;
+        }
+        
+        .form-group label {
+            width: 100px;
+            font-weight: bold;
+            padding-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .form-group .input-wrapper {
+            width: 100%;
+        }
+
+        /* 입력 요소 스타일 */
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box; /* 패딩이 너비를 넘어가지 않도록 설정 */
+        }
+        
+        textarea {
+            height: 300px;
+            resize: vertical; /* 수직으로만 크기 조절 가능 */
+        }
+
+        /* 이미지 업로드 */
+        .image-upload-box {
+            width: 200px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        input[type="file"] {
+            display: none; /* 실제 파일 입력창은 숨김 */
+        }
+
+        /* 상품 상태 (라디오 버튼) */
+        .status-options label {
+            width: auto;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .status-options input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        /* 가격 입력 */
+        .price-input {
+            display: flex;
+            align-items: center;
+        }
+
+        .price-input input {
+            text-align: right;
+        }
+
+        .price-input span {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        /* 등록하기 버튼 */
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h1>상품 정보</h1>
+        <form action="/register-product" method="post" enctype="multipart/form-data">
+            <div class="form-layout">
+                <div class="form-left">
+                    <div class="form-group">
+                        <label>상품 이미지</label>
+                        <div class="input-wrapper">
+                            <label for="image-upload" class="image-upload-box">
+                                <div>
+                                    이미지 등록<br>
+                                    (클릭)
+                                </div>
+                            </label>
+                            <input type="file" id="image-upload" name="product_image" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-name">상품명</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="product-name" name="product_name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">카테고리</label>
+                        <div class="input-wrapper">
+                            <select id="category" name="category">
+                                <option value="digital">디지털기기</option>
+                                <option value="furniture">가구/인테리어</option>
+                                <option value="clothing">의류/잡화</option>
+                                <option value="books">도서/티켓/음반</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>상품 상태</label>
+                        <div class="input-wrapper status-options">
+                            <label><input type="radio" name="product_status" value="new" checked> 새상품 (미사용)</label>
+                            <label><input type="radio" name="product_status" value="used_like_new"> 사용감 거의 없음</label>
+                            <label><input type="radio" name="product_status" value="used"> 사용감 많음</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-right">
+                    <div class="form-group">
+                        <label for="description">설명</label>
+                        <div class="input-wrapper">
+                            <textarea id="description" name="description" required></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">가격</label>
+                        <div class="input-wrapper price-input">
+                            <input type="number" id="price" name="price" placeholder="0" required>
+                            <span>원</span>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-button">등록하기</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

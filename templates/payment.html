@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}주문/결제 - 현란밈장터{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* --- 결제 페이지 전용 스타일 --- */
+    .payment-page { max-width: 1000px; margin: 20px auto; padding: 20px; }
+    .payment-grid { display: flex; gap: 30px; }
+    .payment-left { flex: 0.6; }
+    .payment-right { flex: 0.4; }
+    .payment-box { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .payment-box h2 { font-size: 18px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+    .delivery-info p { margin-bottom: 5px; color: #333; }
+    .delivery-info strong { color: #666; display: inline-block; width: 80px; }
+    .address-options { margin-bottom: 15px; display: flex; gap: 20px; align-items: center; font-size: 14px; }
+    #new-address-form { display: none; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px; }
+    #new-address-form .form-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; font-size: 14px; }
+    .order-item { display: flex; align-items: center; gap: 15px; }
+    .order-item img { width: 70px; height: 70px; object-fit: cover; border-radius: 4px; background-color: #f0f0f0; }
+    .order-item-info p { margin: 2px 0; }
+    .order-item-title { font-weight: bold; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
+    .summary-total { font-size: 16px; font-weight: bold; color: #FF1B8D; }
+    .payment-methods label { display: block; margin-bottom: 10px; font-size: 14px; }
+    .payment-button { width: 100%; padding: 15px; background-color: #FF1B8D; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+    .payment-button:hover { background-color: #e0157a; }
+    .payment-button:disabled { background-color: #aaa; cursor: not-allowed; }
+    @media(max-width: 768px) { .payment-grid { flex-direction: column; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="POST" class="payment-page">
+    <h1>주문/결제</h1>
+    <div class="payment-grid">
+        <div class="payment-left">
+            <div class="payment-box delivery-info">
+                <h2>배송 정보</h2>
+                <div class="address-options">
+                    <label><input type="radio" name="address_option" value="default" checked> 기본 배송지</label>
+                    <label><input type="radio" name="address_option" value="new"> 새로운 배송지</label>
+                </div>
+                <div id="default-address-info">
+                    <p><strong>받는 분</strong> {{ user.user_name }}</p>
+                    <p><strong>연락처</strong> {{ user.phone_number }}</p>
+                    <p><strong>주소</strong> {{ user.address }}</p>
+                </div>
+                <div id="new-address-form">
+                    <input type="text" placeholder="받는 분" class="form-input">
+                    <input type="text" placeholder="연락처" class="form-input">
+                    <input type="text" placeholder="주소" class="form-input">
+                </div>
+            </div>
+            <div class="payment-box">
+                <h2>주문 상품</h2>
+                <div class="order-item">
+                    <img src="{{ product.image_url or 'https://placehold.co/70x70/eee/ccc?text=No+Image' }}" alt="{{ product.title }}">
+                    <div class="order-item-info">
+                        <p class="order-item-title">{{ product.title }}</p>
+                        <p>{{ "{:,}".format(product.price|int) }}원 / 1개</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="payment-right">
+            <div class="payment-box">
+                <h2>결제 금액</h2>
+                <div class="summary-row">
+                    <span>상품 금액</span>
+                    <span>{{ "{:,}".format(product.price|int) }}원</span>
+                </div>
+                    <hr style="border:0; border-top: 1px solid #eee; margin: 15px 0;">
+                    <div class="summary-row">
+                        <strong>총 결제 금액</strong>
+                        <strong class="summary-total">{{ "{:,}".format(product.price|int) }}원</strong>
+                    </div>
+                </div>
+                <div class="payment-box">
+                    <h2>결제 수단</h2>
+                    <div class="payment-methods">
+                        <label><input type="radio" name="payment_method" value="card" checked> 카드 결제</label>
+                        <label><input type="radio" name="payment_method" value="transfer"> 계좌 이체</label>
+                    </div>
+                </div>
+                <button id="final-payment-btn" class="payment-button">{{ "{:,}".format(product.price|int) }}원 결제하기</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    // 배송지 선택 라디오 버튼 기능
+    document.querySelectorAll('input[name="address_option"]').forEach(radio => {
+        radio.addEventListener('change', (event) => {
+            const defaultInfo = document.getElementById('default-address-info');
+            const newAddressForm = document.getElementById('new-address-form');
+            if (event.target.value === 'new') {
+                defaultInfo.style.display = 'none';
+                newAddressForm.style.display = 'block';
+            } else {
+                defaultInfo.style.display = 'block';
+                newAddressForm.style.display = 'none';
+            }
+        });
+    });
+
+    // 결제 버튼 중복 클릭 방지 기능
+    const paymentForm = document.querySelector('.payment-page');
+    paymentForm.addEventListener('submit', () => {
+        const paymentButton = document.getElementById('final-payment-btn');
+        paymentButton.disabled = true;
+        paymentButton.textContent = '결제 처리 중...';
+    });
+</script>
+{% endblock %}

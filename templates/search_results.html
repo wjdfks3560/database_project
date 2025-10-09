@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}'{{ query }}' 검색 결과 - 현란밈장터{% endblock %}
+
+{% block content %}
+<div style="padding-top: 20px;">
+    {% if products %}
+        <h1>'{{ query }}'에 대한 검색 결과</h1>
+    {% else %}
+        <h1>'{{ query }}'에 대한 검색 결과가 없습니다.</h1>
+        <p style="margin-top: 10px; color: #666;">다른 검색어로 다시 시도해 보세요.</p>
+    {% endif %}
+
+    <div class="product-grid">
+        {% for p in products %}
+            <a class="product-card" href="{{ url_for('product_detail', product_id=p.product_id) }}">
+                <div class="product-image"{% if p.image_url %} style="background-image:url('{{ p.image_url }}');"{% endif %}></div>
+                <div class="product-info">
+                    <div class="product-title">{{ p.title }}</div>
+                    <div class="product-price">{{ "{:,}".format(p.price|int) }}원</div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

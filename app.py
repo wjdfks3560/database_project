@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'root',
+    'password': '0826',
     'database': 'projectdb'
 }
 
@@ -54,6 +54,69 @@ def main_page():
         if conn is not None:
             conn.close()
     return render_template('main_page.html', products=products, session=session)
+
+# ======================================================================
+#                                 도움말
+# ======================================================================
+
+# [추가] 분석 보고서 페이지를 위한 라우트
+@app.route('/report')
+def report_page():
+    return render_template('report.html')
+
+
+# ======================================================================
+#                                 검색 기능
+# ======================================================================
+@app.route('/search')
+def search():
+    # 1. 사용자가 입력한 검색어를 URL에서 가져옵니다 (예: /search?q=노트북)
+    query = request.args.get('q', '').strip()
+
+    # 검색어가 없으면 메인 페이지로 돌려보냅니다.
+    if not query:
+        return redirect(url_for('main_page'))
+
+    products = []
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # 2. 검색어 타입에 따라 다른 SQL 쿼리를 준비합니다.
+        # '@'로 시작하면 사용자 ID 또는 이름으로 검색
+        if query.startswith('@'):
+            search_term = f"%{query[1:]}%"
+            sql = """
+                SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price, 
+                       (SELECT pi.image_url FROM product_image pi WHERE pi.product_id = p.product_id ORDER BY pi.image_id LIMIT 1) as image_url
+                FROM Product p
+                JOIN User u ON p.seller_id = u.userid
+                WHERE u.id LIKE %s OR u.user_name LIKE %s
+                ORDER BY p.product_id DESC
+            """
+            cursor.execute(sql, (search_term, search_term))
+        # 그 외의 경우, 상품 제목 또는 판매자 주소로 검색
+        else:
+            search_term = f"%{query}%"
+            sql = """
+                SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price, 
+                       (SELECT pi.image_url FROM product_image pi WHERE pi.product_id = p.product_id ORDER BY pi.image_id LIMIT 1) as image_url
+                FROM Product p
+                JOIN User u ON p.seller_id = u.userid
+                WHERE p.title LIKE %s OR u.address LIKE %s
+                ORDER BY p.product_id DESC
+            """
+            cursor.execute(sql, (search_term, search_term))
+        
+        products = cursor.fetchall()
+
+    finally:
+        cursor.close()
+        conn.close()
+
+    # 3. search_results.html 템플릿에 검색 결과와 검색어를 전달하여 페이지를 보여줍니다.
+    return render_template('search_results.html', products=products, query=query)
+
 
 # ======================================================================
 #                           회원가입
@@ -209,6 +272,7 @@ def wishlist_page():
             ) AS first_image ON p.product_id = first_image.product_id
             LEFT JOIN product_image pi ON pi.image_id = first_image.min_image_id
             WHERE w.userid=%s
+            ORDER BY p.product_id DESC
         """
         cursor.execute(sql, (session['user_id'],))
         products = cursor.fetchall()
@@ -337,6 +401,79 @@ def add_wish_counter(product_id):
         if conn is not None:
             conn.close()
     return redirect(url_for("product_detail", product_id=product_id))
+
+# ======================================================================
+#                             주문/결제 페이지
+# ======================================================================
+@app.route('/payment/<int:product_id>', methods=['GET', 'POST'])
+def payment_page(product_id):
+    # 1. 로그인 필수: 로그인하지 않은 사용자는 로그인 페이지로 보냅니다.
+    if 'user_id' not in session:
+        flash("로그인 후 이용 가능합니다.", "warning")
+        return redirect(url_for('login_page'))
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # 2. 상품 정보 조회: URL로 받은 product_id를 사용해 DB에서 상품 정보를 가져옵니다.
+        cursor.execute("SELECT * FROM Product WHERE product_id=%s", (product_id,))
+        product = cursor.fetchone()
+
+        if not product:
+            flash("존재하지 않는 상품입니다.", "danger")
+            return redirect(url_for('main_page'))
+        
+          # '결제하기' 버튼을 눌렀을 때의 처리를 추가 (POST)
+        if request.method == 'POST':
+            # Orders 테이블에 주문 추가
+            status = '거래완료'
+            seller_id = product['seller_id']
+            sql_order = "INSERT INTO Orders (buyer_userid, seller_userid, product_id, order_status) VALUES (%s, %s, %s, %s)"
+            cursor.execute(sql_order, (session['user_id'], seller_id, product_id, status))
+            cursor.execute("SELECT LAST_INSERT_ID()")
+            new_order_id = cursor.fetchone()['LAST_INSERT_ID()']
+
+            # Payment 테이블에 결제 정보 추가
+             
+             # 1. paymentid를 수동으로 찾아오기 (새로 추가된 부분)
+            cursor.execute("SELECT MAX(paymentid) AS max_id FROM Payment")
+            max_id_result = cursor.fetchone()
+            # 만약 테이블이 비어있으면 1부터 시작, 아니면 가장 큰 값에 1을 더함
+            next_payment_id = (max_id_result['max_id'] or 0) + 1
+            
+            payment_method = request.form.get('payment_method', 'card')
+            method_text = '카드' if payment_method == 'card' else '계좌이체'
+            sale_price = int(product['price'])
+            
+            # 2. paymentcol에 임시 값 넣어주기 (수정된 부분)
+            paymentcol_value = '' # 임시로 빈 값을 넣어줍니다.
+            
+            sql_payment = "INSERT INTO Payment (paymentid, orderid, sale_price, method, paymentcol) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(sql_payment, (next_payment_id, new_order_id, sale_price, method_text, paymentcol_value))
+           
+            conn.commit() # 모든 DB 변경사항을 최종 저장
+            flash("결제가 완료되었습니다.", "success")
+            return redirect(url_for('orders_page')) # 주문 내역 페이지로 이동
+
+        
+
+        # 3. 사용자 정보 조회: 세션에 저장된 user_id로 현재 로그인한 사용자의 정보를 가져옵니다.
+        cursor.execute("SELECT * FROM User WHERE userid=%s", (session['user_id'],))
+        user = cursor.fetchone()
+
+        # 4. payment.html 렌더링: 조회한 상품과 사용자 정보를 템플릿으로 넘겨줍니다.
+        return render_template('payment.html', product=product, user=user)
+   
+    except mysql.connector.Error as err:
+        print(f"DB Error: {err}")
+        flash("결제 페이지를 여는 중 오류가 발생했습니다.", "danger")
+        return redirect(url_for('main_page'))
+    finally:
+        if cursor is not None: cursor.close()
+        if conn is not None: conn.close()
 
 # ======================================================================
 #                           상품 등록

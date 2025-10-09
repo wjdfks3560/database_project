@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중고마켓</title>
+    <style>
+        /* 기본 스타일 초기화 */
+        body, h1, ul, p {
+            margin: 0;
+            padding: 0;
+            font-family: 'Malgun Gothic', sans-serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* 전체 레이아웃 */
+        .wrapper {
+            width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- 헤더 --- */
+        .header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            border: 2px solid #333;
+            padding: 10px 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            flex-grow: 1;
+            margin: 0 40px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #333;
+            font-size: 16px;
+        }
+
+        .header-menu {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-menu a {
+            border: 2px solid #333;
+            padding: 10px 15px;
+            font-weight: bold;
+        }
+
+        /* --- 메인 콘텐츠 --- */
+        .container {
+            display: flex;
+            margin-top: 30px;
+            gap: 30px;
+        }
+
+        /* 왼쪽 사이드바 */
+        .sidebar {
+            width: 200px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar .list-menu {
+            border: 2px solid #333;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .recommended-item {
+            border: 2px solid #333;
+            padding: 15px;
+        }
+
+        .recommended-item h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .recommended-item .product-placeholder {
+            height: 200px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #aaa;
+        }
+
+
+        /* 오른쪽 메인 콘텐츠 */
+        .main-content {
+            width: 100%;
+        }
+
+        /* 상품 그리드 레이아웃 */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4개의 열을 만듦 */
+            gap: 20px; /* 아이템 사이의 간격 */
+        }
+
+        .product-card {
+            border: 2px solid #333;
+            height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #aaa;
+            background-color: #f9f9f9;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <header class="header">
+            <div class="header-top">
+                <a href="#">로그인 / 회원가입</a>
+                <a href="#">마이페이지</a>
+            </div>
+            <div class="header-main">
+                <div class="logo">로고</div>
+                <div class="search-bar">
+                    <input type="text" placeholder="검색">
+                </div>
+                <div class="header-menu">
+                    <a href="#">찜</a>
+                    <a href="#">판매</a>
+                    <a href="#">마이메뉴</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <aside class="sidebar">
+                <div class="list-menu">목록</div>
+                <div class="recommended-item">
+                    <h3>C:/의리 상품 추천</h3>
+                    <div class="product-placeholder">상품</div>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <div class="product-grid">
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                    <div class="product-card">상품</div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+</body>
+</html>

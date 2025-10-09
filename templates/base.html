@@ -29,6 +29,31 @@
         .flash-info { background-color:#cce5ff; color:#004085; }
         .flash-danger { background-color:#f8d7da; color:#721c24; }
         main { padding: 10px 0 30px; }
+        .help-button {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: #2563EB; /* 파란색 계열 버튼 */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            z-index: 1000; /* 다른 요소들 위에 표시 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1); /* 마우스를 올리면 살짝 커지는 효과 */
+        }
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -38,7 +63,9 @@
             <div class="header-top">
                 <a href="{{ url_for('main_page') }}" class="logo logo-gradient">현란밈장터</a>
                 <div class="search-bar">
-                    <input type="text" placeholder="상품명, 지역, @상점명 입력">
+                    <form action="{{ url_for('search') }}" method="GET" style="display: flex;">
+                         <input type="text" name="q" placeholder="상품명, 지역, @상점명 입력" style="width: 100%;">
+                     </form>
                 </div>
                 <div class="header-menu">
                     {% if session.get('user_id') %}
@@ -69,5 +96,6 @@
             {% block content %}{% endblock %}
         </main>
     </div>
+    <a href="{{ url_for('report_page') }}" class="help-button">도움말</a>
 </body>
 </html>

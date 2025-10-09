@@ -137,7 +137,7 @@
           <button class="btn btn-like" type="submit">♡ 카운트+</button>
         </form>
 
-        <button class="btn btn-buy" type="button">구매하기</button>
+        <a href="{{ url_for('payment_page', product_id=product.product_id) }}" class="btn btn-buy">구매하기</a>
       </div>
 
       <!-- 상품 설명 -->
