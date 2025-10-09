@@ -54,6 +54,32 @@
         .help-button:hover {
             transform: scale(1.1); /* 마우스를 올리면 살짝 커지는 효과 */
         }
+
+        .register-button {
+            position: fixed;
+            bottom: 95px;
+            right: 25px;
+            background-color: #eb2f25ff; /* 빨간색 계열 버튼 */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            z-index: 1001; /* 다른 요소들 위에 표시 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+
+        .register-button:hover {
+            transform: scale(1.1); /* 마우스를 올리면 살짝 커지는 효과 */
+        }
     </style>
     {% block head_extra %}{% endblock %}
 </head>
@@ -97,5 +123,6 @@
         </main>
     </div>
     <a href="{{ url_for('report_page') }}" class="help-button">도움말</a>
+    <a href="{{ url_for('register_product_page') }}" class="register-button">물품<br>등록</a>
 </body>
 </html>

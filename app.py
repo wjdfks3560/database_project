@@ -64,6 +64,15 @@ def main_page():
 def report_page():
     return render_template('report.html')
 
+# ======================================================================
+#                                 물품 등록
+# ======================================================================
+
+# [추가] 분석 보고서 페이지를 위한 라우트
+@app.route('/register')
+def register_product_page():
+    return render_template('register_product.html')
+
 
 # ======================================================================
 #                                 검색 기능
