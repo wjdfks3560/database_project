@@ -514,6 +514,11 @@ def get_category_id_by_name(conn, name: str):
 
 @app.route("/product/register", methods=["GET", "POST"])
 def register_product():
+    # --- 로그인 체크 ---
+    if 'user_id' not in session:
+        flash("로그인 후 이용 가능합니다.", "warning")
+        return redirect(url_for("login_page"))
+    
     # GET: 등록 페이지 렌더(템플릿이 있다면)
     if request.method == "GET":
         return render_template("register_product.html")
