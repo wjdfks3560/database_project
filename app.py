@@ -65,16 +65,6 @@ def report_page():
     return render_template('report.html')
 
 # ======================================================================
-#                                 물품 등록
-# ======================================================================
-
-# [추가] 분석 보고서 페이지를 위한 라우트
-@app.route('/register')
-def register_product_page():
-    return render_template('register_product.html')
-
-
-# ======================================================================
 #                                 검색 기능
 # ======================================================================
 @app.route('/search')
@@ -526,7 +516,7 @@ def get_category_id_by_name(conn, name: str):
 def register_product():
     # GET: 등록 페이지 렌더(템플릿이 있다면)
     if request.method == "GET":
-        return render_template("product_register.html")
+        return render_template("register_product.html")
 
     # POST: 등록 처리
     title       = (request.form.get("title") or "").strip()
