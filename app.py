@@ -216,6 +216,12 @@ def wishlist_add(product_id):
         cursor.execute("SELECT 1 FROM wishlist WHERE userid=%s AND product_id=%s", (session['user_id'], product_id))
         exists = cursor.fetchone()
         if not exists:
+            # 상품 카운트 +1
+            cursor.execute("""
+                UPDATE Product
+                SET wish_count = COALESCE(wish_count,0) + 1
+                WHERE product_id=%s
+            """, (product_id,))
             cursor.execute("INSERT INTO wishlist (userid, product_id) VALUES (%s, %s)", (session['user_id'], product_id))
             conn.commit()
             flash("찜 목록에 추가되었습니다!", "success")
@@ -241,6 +247,16 @@ def wishlist_remove(product_id):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM wishlist WHERE userid=%s AND product_id=%s", (session['user_id'], product_id))
+        deleted = cursor.rowcount
+
+# 삭제가 실제로 일어났다면 wish_count -1 (0 미만 방지)
+        if deleted:
+            cursor.execute("""
+                UPDATE Product
+                SET wish_count = GREATEST(COALESCE(wish_count,0)-1, 0)
+                WHERE product_id=%s
+            """, (product_id,))
+
         conn.commit()
         flash("찜 목록에서 삭제되었습니다.", "success")
     finally:
@@ -249,7 +265,7 @@ def wishlist_remove(product_id):
         if conn is not None:
             conn.close()
 
-    return redirect(url_for('wishlist_page'))
+    return redirect(url_for('product_detail', product_id=product_id))
 
 @app.route('/wishlist')
 def wishlist_page():
