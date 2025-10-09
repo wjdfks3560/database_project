@@ -622,6 +622,8 @@ def profile_page():
         return redirect(url_for('login_page'))
     user = None
     profile = None
+    selling_products = []
+
     conn = None
     cursor = None
     try:
@@ -631,12 +633,30 @@ def profile_page():
         user = cursor.fetchone()
         cursor.execute("SELECT * FROM User_profile WHERE userid=%s", (session['user_id'],))
         profile = cursor.fetchone()
+
+        # 내가 판매중인 상품(썸네일 1장 포함)
+        cursor.execute("""
+            SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price,
+                   (SELECT pi.image_url
+                      FROM product_image pi
+                     WHERE pi.product_id = p.product_id
+                     ORDER BY pi.image_id
+                     LIMIT 1) AS image_url
+              FROM Product p
+             WHERE p.seller_id = %s
+               AND p.Product_status = '판매중'
+             ORDER BY p.product_id DESC
+             LIMIT 40
+        """, (session['user_id'],))
+        selling_products = cursor.fetchall()
+
+
     finally:
         if cursor is not None:
             cursor.close()
         if conn is not None:
             conn.close()
-    return render_template('profile.html', user=user, profile=profile, session=session)
+    return render_template('profile.html', user=user, profile=profile, selling_products=selling_products, session=session)
 
 @app.route('/notifications')
 def notifications_page():
