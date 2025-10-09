@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>물품 등록</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Noto Sans KR", sans-serif;
+    padding:24px;
+    overflow:auto;
+    color:#222;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 180px 1fr 520px; /* 좌 / 중 / 우 */
+    gap:20px 24px;
+    align-items:start;
+  }
+
+  .label{font-weight:700; padding-top:6px;}
+
+  .input, select, textarea{
+    width:100%;
+    border:1px solid #b9c0d4;
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:14px;
+    background:#fff;
+  }
+  textarea{min-height:420px; resize:vertical}
+
+  /* 숫자 입력 화살표 제거 */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  input[type=number]{-moz-appearance:textfield;}
+
+  .image-group{max-width:320px}
+  .image-preview{
+    width:100%; aspect-ratio:1/1;
+    border:1px dashed #b9c0d4; border-radius:10px;
+    background:#f6f7fb; color:#666;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; margin-bottom:8px;
+  }
+  .image-preview img{width:100%; height:100%; object-fit:cover}
+
+  /* 상태/배송 */
+  .box{
+    border:1px solid #b9c0d4; border-radius:10px; padding:12px;
+    display:flex; flex-direction:column; gap:14px; background:#fff;
+  }
+  .radios-row{display:flex; gap:20px; flex-wrap:wrap; font-size:14px}
+  .radios-col{display:flex; flex-direction:column; gap:8px; font-size:14px}
+
+  /* 우측 */
+  .right{
+    grid-column:3; grid-row:1 / span 6;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .price-row{display:flex; align-items:center; gap:10px}
+  .won{font-weight:700}
+  .submit-wrap{
+    margin-top:60px; /* 버튼을 아래로 내림 */
+    display:flex; justify-content:flex-end;
+  }
+  .btn{
+    border:none; background:#1b4dff; color:#fff; font-weight:700;
+    padding:14px 26px; border-radius:10px; cursor:pointer; font-size:15px;
+  }
+  .btn:hover{filter:brightness(0.96)}
+</style>
+</head>
+<body>
+
+  <form class="grid" action="/register" method="post" enctype="multipart/form-data">
+    <!-- 좌: 이미지 -->
+    <div class="label">상품 이미지</div>
+    <div class="image-group">
+      <div id="preview" class="image-preview">이미지 미리보기</div>
+      <input type="file" name="image" id="image" accept="image/*">
+    </div>
+
+    <!-- 우측 -->
+    <aside class="right">
+      <div><b>설명</b></div>
+      <textarea name="description" placeholder="상품 설명을 입력하세요" required></textarea>
+
+      <div><b>가격</b></div>
+      <div class="price-row">
+        <input class="input" type="number" name="price" placeholder="0" min="0" step="100" required>
+        <span class="won">원</span>
+      </div>
+
+      <div class="submit-wrap">
+        <button class="btn" type="submit">등록하기</button>
+      </div>
+    </aside>
+
+    <!-- 중앙 -->
+    <div class="label">상품명</div>
+    <input class="input" type="text" name="title" placeholder="상품명을 입력하세요" required>
+
+    <div class="label">카테고리</div>
+    <select name="category" required>
+      <option value="" disabled selected>선택</option>
+      <option>디지털/가전</option>
+      <option>패션/잡화</option>
+      <option>생활/주방</option>
+      <option>도서/티켓</option>
+      <option>스포츠/레저</option>
+      <option>기타</option>
+    </select>
+
+    <div class="label">상품 상태</div>
+    <div class="box">
+      <div><b>상태</b></div>
+      <div class="radios-row">
+        <label><input type="radio" name="condition" value="새상품(미사용)" required> 새상품(미사용)</label>
+        <label><input type="radio" name="condition" value="사용감 적음"> 사용감 적음</label>
+        <label><input type="radio" name="condition" value="보통"> 보통</label>
+        <label><input type="radio" name="condition" value="사용감 많음"> 사용감 많음</label>
+      </div>
+      <div><b>배송 방법</b></div>
+      <div class="radios-col">
+        <label><input type="radio" name="shipping" value="택배" required> 택배</label>
+        <label><input type="radio" name="shipping" value="직거래"> 직거래</label>
+      </div>
+    </div>
+  </form>
+
+<script>
+  const input = document.getElementById('image');
+  const preview = document.getElementById('preview');
+  input.addEventListener('change', e=>{
+    const file = e.target.files?.[0];
+    if(!file){ preview.textContent = "이미지 미리보기"; return; }
+    const url = URL.createObjectURL(file);
+    preview.innerHTML = `<img src="${url}" alt="preview">`;
+  });
+</script>
+</body>
+</html>

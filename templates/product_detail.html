@@ -132,11 +132,6 @@
           {% endif %}
         {% endif %}
 
-        <!-- wish_count 단순 카운터(선택) -->
-        <form action="{{ url_for('add_wish_counter', product_id=product.product_id) }}" method="post">
-          <button class="btn btn-like" type="submit">♡ 카운트+</button>
-        </form>
-
         <a href="{{ url_for('payment_page', product_id=product.product_id) }}" class="btn btn-buy">구매하기</a>
       </div>
 

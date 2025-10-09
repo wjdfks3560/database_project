@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '0826',
+    'password': 'root',
     'database': 'projectdb'
 }
 
@@ -295,6 +295,10 @@ def product_detail(product_id):
     comments = []
     is_wish = False
     current_user_id = session.get('user_id')
+    
+    # 목록에서 들어온 표시 + 세션 중복 방지용
+    src = request.args.get('src') #list면 목록에서 클릭
+    viewed = set(session.get('viewed_once', []))  # 이번 브라우저 세션에서 이미 센 상품id들
 
     conn = None
     cursor = None
@@ -334,9 +338,15 @@ def product_detail(product_id):
         """, (product_id,))
         comments = cursor.fetchall()
 
-        # 조회수 +1
-        cursor.execute("UPDATE Product SET view = COALESCE(view,0) + 1 WHERE product_id=%s", (product_id,))
+        # ★ 조회수 증가: '목록에서 클릭해 들어온 최초 1회'만
+        if src == 'list' and product_id not in viewed:
+            cursor.execute(
+                "UPDATE Product SET view = COALESCE(view,0) + 1 WHERE product_id=%s",
+                (product_id,)
+            )
         conn.commit()
+        viewed.add(product_id)
+        session['viewed_once'] = list(viewed)
 
         # 현재 사용자의 위시 여부
         if current_user_id:

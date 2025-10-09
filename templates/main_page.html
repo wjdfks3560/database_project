@@ -6,7 +6,7 @@
 <div class="product-grid">
     {% if products %}
         {% for p in products %}
-            <a class="product-card" href="{{ url_for('product_detail', product_id=p.product_id) }}">
+            <a class="product-card" href="{{ url_for('product_detail', product_id=p.product_id, src='list') }}">
                 <div class="product-image"{% if p.image_url %} style="background-image:url('{{ p.image_url }}');"{% endif %}></div>
                 <div class="product-info">
                     <div class="product-title">{{ p.title }}</div>
