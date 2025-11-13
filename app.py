@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '0826',
+    'password': 'root',
     'database': 'projectdb'
 }
 
@@ -547,6 +547,80 @@ def payment_page(product_id):
         if conn is not None: conn.close()
 
 # ======================================================================
+#                               리뷰 작성
+# ======================================================================
+@app.route('/review/<int:order_id>', methods=['POST'])
+def review_page(order_id):
+    if 'user_id' not in session:
+        flash("로그인 후 이용 가능합니다.", "warning")
+        return redirect(url_for('login_page'))
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # 1) 이 주문이 나의 주문인지 + 판매자 ID 가져오기
+        cursor.execute("""
+            SELECT o.orderid,
+                   o.product_id,
+                   o.order_status,
+                   o.seller_userid
+              FROM Orders o
+             WHERE o.orderid = %s
+               AND o.buyer_userid = %s
+        """, (order_id, session['user_id']))
+        order = cursor.fetchone()
+        if not order:
+            abort(404)
+
+        # 2) 이미 리뷰를 작성했는지 먼저 확인
+        cursor.execute("""
+            SELECT 1
+              FROM Reviews
+             WHERE orderid = %s
+               AND buyer_userid = %s
+             LIMIT 1
+        """, (order_id, session['user_id']))
+        if cursor.fetchone():
+            flash("이미 이 주문에 대한 후기를 작성하셨습니다.", "info")
+            return redirect(url_for('orders_page'))
+
+        # 3) 평점/코멘트 읽기
+        rating_raw = request.form.get('rating', '')
+        comment = (request.form.get('comment') or '').strip()
+
+        try:
+            rating = int(rating_raw)
+        except ValueError:
+            rating = 0
+        if rating < 1 or rating > 5:
+            flash("평점은 1~5 사이에서 선택해 주세요.", "warning")
+            return redirect(url_for('orders_page'))
+
+        # 4) 새 리뷰 INSERT (중복 없음 보장)
+        cursor.execute("""
+            INSERT INTO Reviews (orderid, buyer_userid, seller_userid, rating, comment)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (order_id,
+              session['user_id'],
+              order['seller_userid'],
+              rating,
+              comment))
+        conn.commit()
+
+        flash("후기가 저장되었습니다.", "success")
+        return redirect(url_for('orders_page'))
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
+
+
+# ======================================================================
 #                           상품 등록
 # ======================================================================
 def get_category_id_by_name(conn, name: str):
@@ -644,6 +718,7 @@ def register_product():
 def orders_page():
     if 'user_id' not in session:
         return redirect(url_for('login_page'))
+
     orders = []
     conn = None
     cursor = None
@@ -651,11 +726,25 @@ def orders_page():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         sql = """
-            SELECT o.orderid, p.title, o.order_status, pay.sale_price, pay.method
-            FROM Orders o
-            JOIN Product p ON o.product_id = p.product_id
-            LEFT JOIN Payment pay ON o.orderid = pay.orderid
-            WHERE o.buyer_userid=%s
+            SELECT o.orderid,
+                   p.title,
+                   o.order_status,
+                   pay.sale_price,
+                   pay.method,
+                   (SELECT pi.image_url
+                      FROM product_image pi
+                     WHERE pi.product_id = p.product_id
+                     ORDER BY pi.image_id
+                     LIMIT 1) AS image_url,
+                   CASE WHEN r.orderid IS NULL THEN 0 ELSE 1 END AS has_review
+              FROM Orders o
+              JOIN Product p ON o.product_id = p.product_id
+         LEFT JOIN Payment pay ON o.orderid = pay.orderid
+         LEFT JOIN Reviews r
+                ON r.orderid = o.orderid
+               AND r.buyer_userid = o.buyer_userid
+             WHERE o.buyer_userid = %s
+             ORDER BY o.orderid DESC
         """
         cursor.execute(sql, (session['user_id'],))
         orders = cursor.fetchall()
@@ -664,29 +753,41 @@ def orders_page():
             cursor.close()
         if conn is not None:
             conn.close()
+
     return render_template('orders.html', orders=orders, session=session)
+
 
 @app.route('/profile')
 def profile_page():
     if 'user_id' not in session:
         return redirect(url_for('login_page'))
+
     user = None
     profile = None
     selling_products = []
+    seller_reviews = []
+    avg_rating = None
+    review_count = 0
 
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
+
+        # 내 기본 정보
         cursor.execute("SELECT * FROM User WHERE userid=%s", (session['user_id'],))
         user = cursor.fetchone()
+
+        # 프로필(자기소개 등)
         cursor.execute("SELECT * FROM User_profile WHERE userid=%s", (session['user_id'],))
         profile = cursor.fetchone()
 
-        # 내가 판매중인 상품(썸네일 1장 포함)
+        # 내가 판매중인 상품
         cursor.execute("""
-            SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price,
+            SELECT p.product_id,
+                   p.title,
+                   CAST(p.price AS UNSIGNED) AS price,
                    (SELECT pi.image_url
                       FROM product_image pi
                      WHERE pi.product_id = p.product_id
@@ -700,13 +801,50 @@ def profile_page():
         """, (session['user_id'],))
         selling_products = cursor.fetchall()
 
+        # (1) 내가 판매자로 받은 리뷰들의 평균 평점 & 개수
+        cursor.execute("""
+            SELECT AVG(r.rating) AS avg_rating,
+                   COUNT(*)       AS review_cnt
+              FROM Reviews r
+             WHERE r.seller_userid = %s
+        """, (session['user_id'],))
+        row = cursor.fetchone()
+        if row:
+            avg_rating = row['avg_rating']
+            review_count = row['review_cnt'] or 0
+
+        # (2) 내가 판매한 상품에 달린 리뷰 목록
+        cursor.execute("""
+            SELECT r.rating,
+                   r.comment,
+                   u.user_name AS buyer_name,
+                   p.title     AS product_title
+              FROM Reviews r
+              JOIN Orders  o ON r.orderid     = o.orderid
+              JOIN Product p ON o.product_id  = p.product_id
+              JOIN User    u ON r.buyer_userid = u.userid
+             WHERE r.seller_userid = %s
+             ORDER BY r.orderid DESC
+             LIMIT 50
+        """, (session['user_id'],))
+        seller_reviews = cursor.fetchall()
 
     finally:
         if cursor is not None:
             cursor.close()
         if conn is not None:
             conn.close()
-    return render_template('profile.html', user=user, profile=profile, selling_products=selling_products, session=session)
+
+    return render_template(
+        'profile.html',
+        user=user,
+        profile=profile,
+        selling_products=selling_products,
+        avg_rating=avg_rating,
+        review_count=review_count,
+        seller_reviews=seller_reviews,
+        session=session
+    )
 
 @app.route('/profile/bio/update', methods=['POST'])
 def update_bio():
@@ -752,9 +890,14 @@ def update_bio():
 # ======================================================================
 @app.route('/shop/<int:user_id>')
 def shop_profile(user_id):
+    """특정 판매자(user_id)의 상점 페이지 (누구나 보기 가능)"""
+
     user = None
     profile = None
     selling_products = []
+    seller_reviews = []
+    avg_rating = None
+    review_count = 0
 
     conn = None
     cursor = None
@@ -762,19 +905,22 @@ def shop_profile(user_id):
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # 상점 주인 정보
+        # 1) 판매자 기본 정보
         cursor.execute("SELECT * FROM User WHERE userid=%s", (user_id,))
         user = cursor.fetchone()
         if not user:
+            # 존재하지 않는 사용자면 404
             abort(404)
 
-        # 상점 프로필(자기소개)
+        # 2) 상점 프로필(자기소개)
         cursor.execute("SELECT * FROM User_profile WHERE userid=%s", (user_id,))
         profile = cursor.fetchone()
 
-        # 해당 사용자가 판매중인 상품
+        # 3) 이 판매자가 판매중인 상품
         cursor.execute("""
-            SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price,
+            SELECT p.product_id,
+                   p.title,
+                   CAST(p.price AS UNSIGNED) AS price,
                    (SELECT pi.image_url
                       FROM product_image pi
                      WHERE pi.product_id = p.product_id
@@ -787,20 +933,53 @@ def shop_profile(user_id):
              LIMIT 40
         """, (user_id,))
         selling_products = cursor.fetchall()
+
+        # 4) 이 판매자(seller_userid = user_id)가 받은 리뷰들의 평균 평점/개수
+        cursor.execute("""
+            SELECT AVG(r.rating) AS avg_rating,
+                   COUNT(*)       AS review_cnt
+              FROM Reviews r
+             WHERE r.seller_userid = %s
+        """, (user_id,))
+        row = cursor.fetchone()
+        if row:
+            avg_rating = row['avg_rating']
+            review_count = row['review_cnt'] or 0
+
+        # 5) 이 판매자가 받은 리뷰 목록
+        cursor.execute("""
+            SELECT r.rating,
+                   r.comment,
+                   u.user_name AS buyer_name,
+                   p.title     AS product_title
+              FROM Reviews r
+              JOIN Orders  o ON r.orderid     = o.orderid
+              JOIN Product p ON o.product_id  = p.product_id
+              JOIN User    u ON r.buyer_userid = u.userid
+             WHERE r.seller_userid = %s
+             ORDER BY r.orderid DESC
+             LIMIT 50
+        """, (user_id,))
+        seller_reviews = cursor.fetchall()
+
     finally:
         if cursor is not None:
             cursor.close()
         if conn is not None:
             conn.close()
 
-    # 내 프로필 템플릿을 재사용
+    # profile.html 을 그대로 재사용
     return render_template(
         'profile.html',
         user=user,
         profile=profile,
         selling_products=selling_products,
+        avg_rating=avg_rating,
+        review_count=review_count,
+        seller_reviews=seller_reviews,
         session=session
     )
+
 
 # ======================================================================
 #                               앱 실행

@@ -44,6 +44,43 @@
     .profile-wrap{grid-template-columns:1fr}
     .grid{grid-template-columns:repeat(2,1fr)}
   }
+
+    .review-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-height:360px;
+    overflow-y:auto;
+  }
+  .review-item{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    background:#fff;
+  }
+  .review-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+  }
+  .review-product{
+    font-weight:600;
+  }
+  .review-rating{
+    font-size:13px;
+    color:#f97316;
+    font-weight:700;
+  }
+  .review-meta{
+    font-size:12px;
+    margin-bottom:6px;
+  }
+  .review-comment{
+    font-size:14px;
+    line-height:1.5;
+  }
+
 </style>
 {% endblock %}
 
@@ -64,6 +101,14 @@
         <img src="https://expo.tukorea.ac.kr/img/2024/tino.png" alt="프로필 이미지">
       </div>
 
+      <div class="field">
+        <b class="muted">총 리뷰 평점</b><br>
+        {% if avg_rating %}
+          {{ "%.1f"|format(avg_rating|float) }}점 ({{ review_count }}개)
+        {% else %}
+          아직 리뷰가 없습니다.
+        {% endif %}
+      </div>
       <div class="field"><b class="muted">아이디</b><br>{{ user.id }}</div>
       <div class="field"><b class="muted">이메일</b><br>{{ user.email }}</div>
       <div class="field"><b class="muted">전화번호</b><br>{{ user.phone_number }}</div>
@@ -75,6 +120,7 @@
       <div class="tabs">
         <button class="tab active" data-target="panel-info">상점정보</button>
         <button class="tab" data-target="panel-selling">판매중인 상품</button>
+        <button class="tab" data-target="panel-reviews">등록된 리뷰</button>
       </div>
 
       <!-- 패널: 상점정보(기본 표시) -->
@@ -125,25 +171,53 @@
           <p class="muted">판매중인 상품이 없습니다.</p>
         {% endif %}
       </div>
+
+      <div id="panel-reviews" class="panel" style="display:none">
+        {% if seller_reviews %}
+          <div class="review-list">
+            {% for r in seller_reviews %}
+              <article class="review-item">
+                <div class="review-header">
+                  <span class="review-product">{{ r.product_title }}</span>
+                  <span class="review-rating">★ {{ r.rating }}</span>
+                </div>
+                <div class="review-meta muted">
+                  {{ r.buyer_name }} 님의 후기
+                </div>
+                <p class="review-comment">{{ r.comment }}</p>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">아직 등록된 리뷰가 없습니다.</p>
+        {% endif %}
+      </div>
     </section>
   </section>
 </main>
 
 <script>
-  // 탭 전환(동일 페이지 내 컨텐츠 교체) - data-target 있는 버튼만
-  const tabs = document.querySelectorAll('.tab[data-target]');
+  // 탭 전환(동일 페이지 내 컨텐츠 교체)
+  const tabs = document.querySelectorAll('.tab');
   const panels = {
-    info: document.getElementById('panel-info'),
-    selling: document.getElementById('panel-selling')
+    'panel-info':    document.getElementById('panel-info'),
+    'panel-selling': document.getElementById('panel-selling'),
+    'panel-reviews': document.getElementById('panel-reviews')
   };
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      // 버튼 active 처리
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
-      const target = tab.dataset.target;
-      panels.info.style.display    = (target === 'panel-info')    ? '' : 'none';
-      panels.selling.style.display = (target === 'panel-selling') ? '' : 'none';
+      const targetId = tab.dataset.target;
+      // 패널 표시/숨김
+      Object.keys(panels).forEach(id => {
+        if (panels[id]) {
+          panels[id].style.display = (id === targetId) ? '' : 'none';
+        }
+      });
     });
   });
 

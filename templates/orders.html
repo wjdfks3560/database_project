@@ -3,21 +3,21 @@
 
 {% block head_extra %}
 <style>
-    /* --- 새로운 주문 내역 페이지 스타일 --- */
+    /* --- 주문 내역 페이지 스타일 --- */
     .orders-page-container {
         padding-top: 20px;
     }
     .orders-list {
         display: flex;
         flex-direction: column;
-        gap: 25px; /* 카드 사이 간격을 넓힘 */
+        gap: 25px;
     }
     .order-card {
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        overflow: hidden; /* 내부 요소가 카드를 벗어나지 않도록 */
+        overflow: hidden;
         transition: box-shadow 0.3s ease;
     }
     .order-card:hover {
@@ -53,7 +53,7 @@
         border: 1px solid #eee;
     }
     .order-item-title {
-        font-weight: 600; /* 폰트 두께 조정 */
+        font-weight: 600;
         font-size: 16px;
         margin-bottom: 8px;
         color: #111827;
@@ -65,9 +65,144 @@
         font-size: 14px;
         color: #4b5563;
     }
-    .order-details-grid dt { /* dt: Definition Term */
+    .order-details-grid dt {
         color: #6b7280;
     }
+
+    /* --- 후기 남기기 버튼 --- */
+    .review-btn{
+        border:none;
+        background:#ff4b9b;
+        color:#fff;
+        font-weight:700;
+        padding:8px 14px;
+        border-radius:999px;
+        cursor:pointer;
+        font-size:14px;
+    }
+
+    /* --- 후기 모달 --- */
+    .review-modal{
+        position:fixed;
+        inset:0;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        z-index:50;
+    }
+    .review-modal.open{display:flex;}
+
+    .review-backdrop{
+        position:absolute;
+        inset:0;
+        background:rgba(0,0,0,0.4);
+    }
+
+    .review-dialog{
+        position:relative;
+        width:420px;
+        max-width:90%;
+        background:#fff;
+        border-radius:16px;
+        padding:20px 22px 18px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    .review-title{
+        font-size:20px;
+        font-weight:800;
+        margin-bottom:12px;
+    }
+
+    .review-product{
+        border:1px solid #e5e7eb;
+        border-radius:10px;
+        padding:8px 10px;
+        font-size:14px;
+        margin-bottom:16px;
+    }
+
+    .review-section{margin-bottom:14px;}
+    .review-label{
+        font-size:14px;
+        font-weight:700;
+        margin-bottom:6px;
+    }
+
+    .review-rating-row{
+        display:flex;
+        justify-content:space-between;
+        border:1px solid #e5e7eb;
+        border-radius:12px;
+        padding:10px 14px;
+    }
+    .rating-item{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:4px;
+        font-size:13px;
+    }
+    .rating-item input{
+        appearance:none;
+        width:0;height:0;
+    }
+    .rating-circle{
+        width:22px;
+        height:22px;
+        border-radius:999px;
+        border:2px solid #9ca3af;
+        box-sizing:border-box;
+    }
+    .rating-item input:checked + .rating-circle{
+        border-color:#1b4dff;
+        background:#1b4dff;
+    }
+    .rating-num{font-size:13px;}
+
+    #reviewComment{
+        width:100%;
+        border-radius:12px;
+        border:1px solid #e5e7eb;
+        padding:10px;
+        resize:vertical;
+        font-size:14px;
+        box-sizing:border-box;
+    }
+
+    .review-actions{
+        display:flex;
+        justify-content:flex-end;
+        gap:8px;
+        margin-top:4px;
+    }
+    .btn-secondary{
+        border:1px solid #d1d5db;
+        background:#fff;
+        border-radius:10px;
+        padding:8px 14px;
+        cursor:pointer;
+    }
+    .btn-primary{
+        border:none;
+        background:#1b4dff;
+        color:#fff;
+        border-radius:10px;
+        padding:8px 16px;
+        font-weight:700;
+        cursor:pointer;
+    }
+
+    .order-footer{
+        padding: 0 20px 16px;
+        display:flex;
+        justify-content:flex-end;
+}
+    .review-btn.done{
+        background:#e5e7eb;
+        color:#6b7280;
+        cursor:default;
+}
 </style>
 {% endblock %}
 
@@ -81,6 +216,23 @@
         <div class="order-card">
             <div class="order-header">
                 <span class="status-badge">{{ o.order_status }}</span>
+
+                {# 거래완료인 주문만 후기 작성 가능 #}
+                {% if o.order_status == '거래완료' %}
+                <div class="order-footer">
+                    {% if o.has_review %}
+                        <!-- 이미 리뷰가 있으면 비활성 버튼 표시 -->
+                        <button class="review-btn done" disabled>후기 작성완료</button>
+                    {% else %}
+                        <!-- 리뷰가 없을 때만 팝업을 띄우는 버튼 -->
+                        <button class="review-btn"
+                                data-order-id="{{ o.orderid }}"
+                                data-product-title="{{ o.title }}">
+                            후기 남기기
+                        </button>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
             <div class="order-body">
                 <img src="{{ o.image_url or 'https://placehold.co/100x100/eee/ccc?text=No+Image' }}" alt="{{ o.title }}">
@@ -94,7 +246,6 @@
                     </dl>
                 </div>
             </div>
-            <!-- 버튼이 있던 order-footer 부분이 삭제되었습니다. -->
         </div>
         {% endfor %}
     </div>
@@ -102,4 +253,83 @@
     <p>주문 내역이 없습니다.</p>
     {% endif %}
 </div>
+
+{# 후기 작성 모달 #}
+<div id="reviewModal" class="review-modal" aria-hidden="true">
+  <div class="review-backdrop" id="reviewBackdrop"></div>
+
+  <div class="review-dialog">
+    <form id="reviewForm" method="post">
+      <h2 class="review-title">소중한 후기 남겨주세요</h2>
+
+      <!-- 구매한 물품 -->
+      <div class="review-product">
+        구매한 물품 :
+        <strong id="reviewProductTitle"></strong>
+      </div>
+
+      <!-- 만족도 체크 -->
+      <div class="review-section">
+        <div class="review-label">만족도 체크</div>
+        <div class="review-rating-row">
+          {% for i in range(1, 6) %}
+          <label class="rating-item">
+            <input type="radio" name="rating" value="{{ i }}"
+                   {% if i == 5 %}checked{% endif %}>
+            <span class="rating-circle"></span>
+            <span class="rating-num">{{ i }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- 후기 작성 -->
+      <div class="review-section">
+        <div class="review-label">후기 작성</div>
+        <textarea id="reviewComment" name="comment" rows="4"
+                  placeholder="상품은 어떠셨나요? 간단하게 남겨주세요."></textarea>
+      </div>
+
+      <div class="review-actions">
+        <button type="button" id="reviewCancelBtn" class="btn-secondary">취소</button>
+        <button type="submit" class="btn-primary">등록하기</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const reviewModal   = document.getElementById('reviewModal');
+  const reviewBackdrop= document.getElementById('reviewBackdrop');
+  const reviewForm    = document.getElementById('reviewForm');
+  const productTitle  = document.getElementById('reviewProductTitle');
+  const commentInput  = document.getElementById('reviewComment');
+  const cancelBtn     = document.getElementById('reviewCancelBtn');
+
+  // "후기 남기기" 버튼 클릭 시 모달 열기
+  document.querySelectorAll('.review-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const orderId = btn.dataset.orderId;
+      const title   = btn.dataset.title;
+
+      productTitle.textContent = title;
+      commentInput.value = '';
+
+      // POST /review/<order_id>
+      reviewForm.action = "/review/" + orderId;
+
+      reviewModal.classList.add('open');
+    });
+  });
+
+  // 닫기 버튼
+  cancelBtn.addEventListener('click', () => {
+    reviewModal.classList.remove('open');
+  });
+
+  // 배경 클릭 시 닫기
+  reviewBackdrop.addEventListener('click', () => {
+    reviewModal.classList.remove('open');
+  });
+</script>
 {% endblock %}
