@@ -43,6 +43,10 @@ def main_page():
                 GROUP BY product_id
             ) AS first_image ON p.product_id = first_image.product_id
             LEFT JOIN product_image pi ON pi.image_id = first_image.min_image_id
+            
+            WHERE p.Product_status = '판매중' 
+            
+            
             ORDER BY COALESCE(p.view,0) DESC, p.product_id DESC
             LIMIT 8
         """
@@ -91,6 +95,9 @@ def search():
                 FROM Product p
                 JOIN User u ON p.seller_id = u.userid
                 WHERE u.id LIKE %s OR u.user_name LIKE %s
+                
+                AND p.Product_status = '판매중' 
+                
                 ORDER BY p.product_id DESC
             """
             cursor.execute(sql, (search_term, search_term))
@@ -431,6 +438,15 @@ def payment_page(product_id):
             flash("존재하지 않는 상품입니다.", "danger")
             return redirect(url_for('main_page'))
         
+
+        # 추가: 상품이 '판매중' 상태인지 확인 (GET/POST 공통 차단 로직)
+        if product.get('Product_status') != '판매중':
+            flash("이미 거래가 완료되었거나 판매 중이 아닌 상품입니다.", "danger")
+            # 상세 페이지로 돌려보내 상태를 확인하게 하는 것이 더 좋습니다.
+            return redirect(url_for('product_detail', product_id=product_id))
+
+
+
           # '결제하기' 버튼을 눌렀을 때의 처리를 추가 (POST)
         if request.method == 'POST':
             # Orders 테이블에 주문 추가
@@ -438,11 +454,22 @@ def payment_page(product_id):
             seller_id = product['seller_id']
             sql_order = "INSERT INTO Orders (buyer_userid, seller_userid, product_id, order_status) VALUES (%s, %s, %s, %s)"
             cursor.execute(sql_order, (session['user_id'], seller_id, product_id, status))
-            cursor.execute("SELECT LAST_INSERT_ID()")
-            new_order_id = cursor.fetchone()['LAST_INSERT_ID()']
+            #cursor.execute("SELECT LAST_INSERT_ID()")
+            #new_order_id = cursor.fetchone()['LAST_INSERT_ID()']
+
+
+            new_order_id = cursor.lastrowid  # 새로 추가된 주문의 ID 가져오기
 
             # Payment 테이블에 결제 정보 추가
-             
+            payment_method = request.form.get('payment_method', 'card')
+            method_text = '카드' if payment_method == 'card' else '계좌이체'
+            sale_price = int(product['price'])
+            paymentcol_value = 'N/A' # NOT NULL 제약조건 대비
+
+            # paymentid를 사용하지 않고 orderid, sale_price, method, paymentcol만 사용
+            sql_payment = "INSERT INTO Payment (orderid, sale_price, method, paymentcol) VALUES (%s, %s, %s, %s)"
+
+
              # 1. paymentid를 수동으로 찾아오기 (새로 추가된 부분)
             cursor.execute("SELECT MAX(paymentid) AS max_id FROM Payment")
             max_id_result = cursor.fetchone()
@@ -452,13 +479,33 @@ def payment_page(product_id):
             payment_method = request.form.get('payment_method', 'card')
             method_text = '카드' if payment_method == 'card' else '계좌이체'
             sale_price = int(product['price'])
-            
+            paymentcol_value = 'N/A'
+
             # 2. paymentcol에 임시 값 넣어주기 (수정된 부분)
-            paymentcol_value = '' # 임시로 빈 값을 넣어줍니다.
+            #paymentcol_value = '' # 임시로 빈 값을 넣어줍니다.
             
+
+            # 변수 4개 (orderid, sale_price, method_text, paymentcol_value)만 전달
+            #cursor.execute(sql_payment, (new_order_id, sale_price, method_text, paymentcol_value))
+            
+            
+            
+            #conn.commit() # 모든 DB 변경사항을 최종 저장
+            #flash("결제가 완료되었습니다.", "success")
+            #return redirect(url_for('orders_page'))
+
+
+            #cursor.execute(sql_payment, (new_order_id, sale_price, method_text, paymentcol_value))
+            # 추가/수정: 상품 상태를 '거래완료'로 업데이트
+            #sql_update_product = "UPDATE Product SET Product_status = '거래완료' WHERE product_id = %s"
             sql_payment = "INSERT INTO Payment (paymentid, orderid, sale_price, method, paymentcol) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(sql_payment, (next_payment_id, new_order_id, sale_price, method_text, paymentcol_value))
            
+            # 3. Product 테이블 상태 업데이트
+            sql_update_product = "UPDATE Product SET Product_status = '거래완료' WHERE product_id = %s"
+            cursor.execute(sql_update_product, (product_id,))
+
+
             conn.commit() # 모든 DB 변경사항을 최종 저장
             flash("결제가 완료되었습니다.", "success")
             return redirect(url_for('orders_page')) # 주문 내역 페이지로 이동
@@ -474,6 +521,10 @@ def payment_page(product_id):
    
     except mysql.connector.Error as err:
         print(f"DB Error: {err}")
+
+        if conn is not None:
+            conn.rollback() # 오류 발생 시 롤백
+
         flash("결제 페이지를 여는 중 오류가 발생했습니다.", "danger")
         return redirect(url_for('main_page'))
     finally:
