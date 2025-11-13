@@ -801,25 +801,6 @@ def shop_profile(user_id):
         session=session
     )
 
-@app.route('/notifications')
-def notifications_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    notifications = []
-    conn = None
-    cursor = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM Notification WHERE seller_userid=%s", (session['user_id'],))
-        notifications = cursor.fetchall()
-    finally:
-        if cursor is not None:
-            cursor.close()
-        if conn is not None:
-            conn.close()
-    return render_template('notifications.html', notifications=notifications, session=session)
-
 # ======================================================================
 #                               앱 실행
 # ======================================================================
