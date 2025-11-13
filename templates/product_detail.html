@@ -3,45 +3,167 @@
 
 {% block head_extra %}
 <style>
-  :root{--line:#cfd6e4;--text:#1f2937;--muted:#6b7280;--brand:#1b4dff;--bg:#fff;--card:#fff;}
+  :root{
+    --line:#cfd6e4;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --brand:#1b4dff;
+    --bg:#fff;
+    --card:#fff;
+  }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Noto Sans KR",sans-serif;color:var(--text);background:var(--bg)}
-  .container{max-width:1100px;margin:16px auto;padding:0 16px}
-  .titlebar{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px}
+  body{
+    font-family:"Noto Sans KR",sans-serif;
+    color:var(--text);
+    background:var(--bg);
+  }
+  .container{
+    max-width:1100px;
+    margin:16px auto;
+    padding:0 16px;
+  }
+
+  .titlebar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:6px 0 14px;
+  }
   .breadcrumbs{font-size:13px;color:var(--muted)}
   .titlebar h1{font-size:20px}
+
+  /* 오른쪽 상단: 찜 / 조회수 */
+  .title-right{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    font-size:13px;
+    color:var(--muted);
+  }
   .view{font-size:13px;color:var(--muted)}
-  .grid{display:grid;grid-template-columns:0.95fr 1fr;gap:18px;align-items:start}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px}
-  .gallery{padding:12px}
-  .thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-  .thumbs img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
-  .photo{width:100%;aspect-ratio:4/3;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#eef2ff}
-  .photo img{width:100%;height:100%;object-fit:cover}
-  .info{padding:14px;display:flex;flex-direction:column;gap:12px}
-  .price-row{display:flex;justify-content:space-between;align-items:center}
-  .price{font-size:22px;font-weight:800}
   .zzim-count{font-size:13px;color:var(--muted)}
-  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .meta{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-  .meta b{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-  .btns{display:flex;gap:10px}
-  .btn{border:none;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer}
-  .btn-like{background:#fff;border:1px solid var(--line)}
-  .btn-buy{background:var(--brand);color:#fff;flex:1}
-  .desc-card{margin-top:14px;padding:16px}
-  .desc-card h3{font-size:16px;margin-bottom:8px}
-  .desc{white-space:pre-wrap;line-height:1.6}
-  .comments header{display:flex;justify-content:space-between;align-items:center}
-  .toggle{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-  .comment-wrap{overflow:hidden;transition:max-height .25s ease}
-  .comment-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-  .comment{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
-  .comment small{color:var(--muted)}
-  .comment-box{display:flex;gap:8px;margin-top:10px}
-  .comment-box input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-  .comment-box button{border:none;background:var(--brand);color:#fff;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
-  @media(max-width:900px){ .grid{grid-template-columns:1fr} }
+
+  /* 두 컬럼 레이아웃 */
+  .grid{
+    display:grid;
+    grid-template-columns:0.95fr 1fr;
+    gap:18px;
+    align-items:flex-start;
+  }
+  .grid-col{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+  }
+  .gallery{padding:12px}
+  .thumbs{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+  .thumbs img{
+    width:84px;
+    height:84px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .photo{
+    width:100%;
+    aspect-ratio:4/3;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#eef2ff;
+  }
+  .photo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+
+  .price-card{padding:14px}
+  .info{
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .price-row{
+    display:flex;
+    justify-content:flex-start;
+    align-items:center;
+  }
+  .price{font-size:22px;font-weight:800}
+
+  .meta-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .meta{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+  }
+  .meta b{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+  .btns{
+    display:flex;
+    gap:10px;
+  }
+  .btn{
+    border:none;
+    border-radius:12px;
+    padding:12px 16px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .btn-like{
+    background:#fff;
+    border:1px solid var(--line);
+  }
+  .btn-buy{
+    background:var(--brand);
+    color:#fff;
+    flex:1;
+    text-align:center;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .desc-card{
+    padding:16px;
+  }
+  .desc-card h3{
+    font-size:16px;
+    margin-bottom:8px;
+  }
+  .desc{
+    white-space:pre-wrap;
+    line-height:1.6;
+  }
+
+  @media(max-width:900px){
+    .grid{grid-template-columns:1fr}
+  }
 </style>
 {% endblock %}
 
@@ -54,12 +176,17 @@
       </div>
       <h1>{{ product.title }}</h1>
     </div>
-    <div class="view">조회수 {{ product.view }}</div>
+
+    <!-- 오른쪽 상단: 찜 / 조회수 나란히 -->
+    <div class="title-right">
+      <div class="zzim-count">찜 {{ product.wish_count or 0 }}</div>
+      <div class="view">조회수 {{ product.view }}</div>
+    </div>
   </div>
 
   <section class="grid">
-    <!-- 좌측: 이미지 + 댓글 -->
-    <div>
+    <!-- 왼쪽: 이미지 + 가격 -->
+    <div class="grid-col">
       <section class="card gallery">
         <div class="photo">
           <img
@@ -75,68 +202,47 @@
         {% endif %}
       </section>
 
-          
-    <!-- 우측: 상품 정보 -->
-    <section class="card info">
-      <div class="price-row">
-        <div class="price">{{ "{:,}".format(product.price|int) }}원</div>
-        <div class="zzim-count">찜 {{ product.wish_count or 0 }}</div>
-      </div>
+      <section class="card price-card">
+        <div class="price-row">
+          <div class="price">{{ "{:,}".format(product.price|int) }}원</div>
+        </div>
+      </section>
+    </div>
 
-      <div class="meta-grid">
-        <div class="meta"><b>판매자</b>{{ seller.user_name }}</div>
-        <div class="meta"><b>상품 상태</b>{{ product.Product_status }}</div>
-        <div class="meta"><b>카테고리</b>{{ product.category_name or ('#' ~ product.category_id) }}</div>
-      </div>
+    <!-- 오른쪽: 판매자/상태/버튼/설명 -->
+    <div class="grid-col">
+      <section class="card info">
+        <div class="meta-grid">
+          <div class="meta"><b>판매자</b>{{ seller.user_name }}</div>
+          <div class="meta"><b>상품 상태</b>{{ product.Product_status }}</div>
+          <div class="meta"><b>카테고리</b>{{ product.category_name or ('#' ~ product.category_id) }}</div>
+        </div>
 
-      <!-- 찜/구매 버튼 -->
-      <div class="btns">
-        {% if session.get('user_id') %}
-          {% if is_wish %}
-            <form method="POST" action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
-              <button class="btn btn-like" type="submit">♥ 찜 취소</button>
-            </form>
-          {% else %}
-            <form method="POST" action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
-              <button class="btn btn-like" type="submit">♡ 찜하기</button>
-            </form>
+        <!-- 찜/구매 버튼 -->
+        <div class="btns">
+          {% if session.get('user_id') %}
+            {% if is_wish %}
+              <form method="POST" action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
+                <button class="btn btn-like" type="submit">♥ 찜 취소</button>
+              </form>
+            {% else %}
+              <form method="POST" action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
+                <button class="btn btn-like" type="submit">♡ 찜하기</button>
+              </form>
+            {% endif %}
           {% endif %}
-        {% endif %}
 
-        <a href="{{ url_for('payment_page', product_id=product.product_id) }}" class="btn btn-buy">구매하기</a>
-      </div>
+          <a href="{{ url_for('payment_page', product_id=product.product_id) }}" class="btn btn-buy">
+            구매하기
+          </a>
+        </div>
+      </section>
 
-      <!-- 상품 설명 -->
       <section class="card desc-card">
         <h3>상품 정보</h3>
         <div class="desc">{{ product.description }}</div>
       </section>
-    </section>
+    </div>
   </section>
 </main>
-
-<!-- <script>
-  // 댓글 토글
-  const wrap=document.getElementById('commentWrap');
-  const btn=document.getElementById('toggleBtn');
-  if(btn && wrap){
-    btn.addEventListener('click',()=>{
-      const isOpen=btn.getAttribute('aria-expanded')==='true';
-      if(isOpen){
-        wrap.style.maxHeight='0px';
-        btn.setAttribute('aria-expanded','false');
-        btn.textContent='댓글 펼치기';
-      }else{
-        wrap.style.maxHeight=wrap.scrollHeight+'px';
-        btn.setAttribute('aria-expanded','true');
-        btn.textContent='댓글 접기';
-      }
-    });
-    window.addEventListener('resize',()=>{
-      if(btn.getAttribute('aria-expanded')==='true'){
-        wrap.style.maxHeight=wrap.scrollHeight+'px';
-      }
-    });
-  }
-</script> -->
 {% endblock %}
