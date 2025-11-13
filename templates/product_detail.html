@@ -75,36 +75,7 @@
         {% endif %}
       </section>
 
-      <!-- 댓글 -->
-      <section class="card desc-card" id="comments">
-        <header>
-          <h3>댓글</h3>
-          <button id="toggleBtn" class="toggle" aria-expanded="false">댓글 펼치기</button>
-        </header>
-        <div id="commentWrap" class="comment-wrap" style="max-height:0;">
-          <div class="comment-list">
-            {% if comments and comments|length %}
-              {% for c in comments %}
-                <div class="comment">
-                  {{ c.content }}<br>
-                  <small>{{ c.author }} · {{ c.created_at }}</small>
-                </div>
-              {% endfor %}
-            {% else %}
-              <div class="comment">첫 댓글을 남겨보세요!</div>
-            {% endif %}
-          </div>
-
-          <!-- add_comment 라우트로 POST -->
-          <form class="comment-box" action="{{ url_for('add_comment', product_id=product.product_id) }}" method="post">
-            <input type="text" name="author" placeholder="닉네임(선택)">
-            <input type="text" name="content" placeholder="문의 내용을 입력하세요" required>
-            <button type="submit">등록</button>
-          </form>
-        </div>
-      </section>
-    </div>
-
+          
     <!-- 우측: 상품 정보 -->
     <section class="card info">
       <div class="price-row">
@@ -144,7 +115,7 @@
   </section>
 </main>
 
-<script>
+<!-- <script>
   // 댓글 토글
   const wrap=document.getElementById('commentWrap');
   const btn=document.getElementById('toggleBtn');
@@ -167,5 +138,5 @@
       }
     });
   }
-</script>
+</script> -->
 {% endblock %}
