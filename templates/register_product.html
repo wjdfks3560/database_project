@@ -68,18 +68,18 @@
         }
 
         /* 입력 요소 스타일 */
-        input[type="text"], select, textarea {
+        input[type="text"], select, textarea, input[type="number"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 16px;
-            box-sizing: border-box; /* 패딩이 너비를 넘어가지 않도록 설정 */
+            box-sizing: border-box;
         }
         
         textarea {
             height: 300px;
-            resize: vertical; /* 수직으로만 크기 조절 가능 */
+            resize: vertical;
         }
 
         /* 이미지 업로드 */
@@ -96,7 +96,7 @@
         }
         
         input[type="file"] {
-            display: none; /* 실제 파일 입력창은 숨김 */
+            display: none;
         }
 
         /* 상품 상태 (라디오 버튼) */
@@ -147,7 +147,8 @@
 
     <div class="form-container">
         <h1>상품 정보</h1>
-        <form action="/register-product" method="post" enctype="multipart/form-data">
+        <!-- 여기만 변경: url_for('register_product') 사용 -->
+        <form action="{{ url_for('register_product') }}" method="post" enctype="multipart/form-data">
             <div class="form-layout">
                 <div class="form-left">
                     <div class="form-group">
@@ -159,32 +160,36 @@
                                     (클릭)
                                 </div>
                             </label>
-                            <input type="file" id="image-upload" name="product_image" accept="image/*">
+                            <!-- name="image" 로 변경 -->
+                            <input type="file" id="image-upload" name="image" accept="image/*">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="product-name">상품명</label>
                         <div class="input-wrapper">
-                            <input type="text" id="product-name" name="product_name" required>
+                            <!-- name="title" 로 변경 -->
+                            <input type="text" id="product-name" name="title" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="category">카테고리</label>
                         <div class="input-wrapper">
+                            <!-- value 를 Category.name 과 동일한 한글로 사용 -->
                             <select id="category" name="category">
-                                <option value="digital">디지털기기</option>
-                                <option value="furniture">가구/인테리어</option>
-                                <option value="clothing">의류/잡화</option>
-                                <option value="books">도서/티켓/음반</option>
+                                <option value="디지털기기">디지털기기</option>
+                                <option value="가구/인테리어">가구/인테리어</option>
+                                <option value="의류/잡화">의류/잡화</option>
+                                <option value="도서/티켓/음반">도서/티켓/음반</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>상품 상태</label>
                         <div class="input-wrapper status-options">
-                            <label><input type="radio" name="product_status" value="new" checked> 새상품 (미사용)</label>
-                            <label><input type="radio" name="product_status" value="used_like_new"> 사용감 거의 없음</label>
-                            <label><input type="radio" name="product_status" value="used"> 사용감 많음</label>
+                            <!-- 이 값들은 아직 백엔드에서 쓰지 않으니 그냥 두셔도 됩니다 -->
+                            <label><input type="radio" name="product_status" value="새상품" checked> 새상품 (미사용)</label>
+                            <label><input type="radio" name="product_status" value="사용감 거의 없음"> 사용감 거의 없음</label>
+                            <label><input type="radio" name="product_status" value="사용감 많음"> 사용감 많음</label>
                         </div>
                     </div>
                 </div>
@@ -193,12 +198,14 @@
                     <div class="form-group">
                         <label for="description">설명</label>
                         <div class="input-wrapper">
+                            <!-- name="description" 그대로 백엔드와 일치 -->
                             <textarea id="description" name="description" required></textarea>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="price">가격</label>
                         <div class="input-wrapper price-input">
+                            <!-- name="price" 그대로 백엔드와 일치 -->
                             <input type="number" id="price" name="price" placeholder="0" required>
                             <span>원</span>
                         </div>
