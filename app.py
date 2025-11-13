@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'root',
+    'password': '0826',
     'database': 'projectdb'
 }
 
@@ -317,6 +317,8 @@ def product_detail(product_id):
     comments = []
     is_wish = False
     current_user_id = session.get('user_id')
+
+    is_seller = False
     
     # 목록에서 들어온 표시 + 세션 중복 방지용
     src = request.args.get('src') # list면 목록에서 클릭
@@ -333,6 +335,10 @@ def product_detail(product_id):
         product = cursor.fetchone()
         if not product:
             abort(404)
+
+        # product 정보를 가져온 후, 현재 유저와 판매자 ID 비교
+        if product and current_user_id == product['seller_id']:
+            is_seller = True    
 
         # 대표/추가 이미지
         cursor.execute("SELECT * FROM product_image WHERE product_id=%s ORDER BY image_id ASC", (product_id,))
@@ -394,6 +400,7 @@ def product_detail(product_id):
         reviews=reviews,
         comments=comments,
         is_wish=is_wish,
+        is_seller=is_seller,
         session=session
     )
 
@@ -433,6 +440,13 @@ def payment_page(product_id):
         # 2. 상품 정보 조회: URL로 받은 product_id를 사용해 DB에서 상품 정보를 가져옵니다.
         cursor.execute("SELECT * FROM Product WHERE product_id=%s", (product_id,))
         product = cursor.fetchone()
+
+        # 3. 본인 상품 구매 방지 확인
+        # 상품의 판매자 ID와 현재 로그인한 ID가 같은지 확인합니다.
+        if product['seller_id'] == session['user_id']:
+            flash("본인이 등록한 상품은 구매할 수 없습니다.", "warning")
+            # 상품 상세 페이지로 돌려보냅니다.
+            return redirect(url_for('product_detail', product_id=product_id))
 
         if not product:
             flash("존재하지 않는 상품입니다.", "danger")
