@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '0826',
+    'password': 'root',
     'database': 'projectdb'
 }
 
@@ -707,24 +707,44 @@ def profile_page():
             conn.close()
     return render_template('profile.html', user=user, profile=profile, selling_products=selling_products, session=session)
 
-@app.route('/notifications')
-def notifications_page():
+@app.route('/profile/bio/update', methods=['POST'])
+def update_bio():
     if 'user_id' not in session:
         return redirect(url_for('login_page'))
-    notifications = []
+
+    bio_text = (request.form.get('bio') or '').strip()
+
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM Notification WHERE seller_userid=%s", (session['user_id'],))
-        notifications = cursor.fetchall()
+        cursor = conn.cursor()
+
+        # 먼저 UPDATE 시도
+        cursor.execute(
+            "UPDATE User_profile SET bio=%s WHERE userid=%s",
+            (bio_text, session['user_id'])
+        )
+
+        # 해당 row가 없으면 INSERT
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "INSERT INTO User_profile (userid, bio) VALUES (%s, %s)",
+                (session['user_id'], bio_text)
+            )
+
+        conn.commit()
+        flash("자기소개가 저장되었습니다.", "success")
+    except mysql.connector.Error as err:
+        print("DB Error:", err)
+        flash("자기소개 저장 중 오류가 발생했습니다.", "danger")
     finally:
         if cursor is not None:
             cursor.close()
         if conn is not None:
             conn.close()
-    return render_template('notifications.html', notifications=notifications, session=session)
+
+    return redirect(url_for('profile_page'))
 
 # ======================================================================
 #                         판매자 상점(프로필) 페이지
@@ -780,6 +800,25 @@ def shop_profile(user_id):
         selling_products=selling_products,
         session=session
     )
+
+@app.route('/notifications')
+def notifications_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    notifications = []
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM Notification WHERE seller_userid=%s", (session['user_id'],))
+        notifications = cursor.fetchall()
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
+    return render_template('notifications.html', notifications=notifications, session=session)
 
 # ======================================================================
 #                               앱 실행
