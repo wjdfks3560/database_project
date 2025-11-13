@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '0826',
+    'password': 'root',
     'database': 'projectdb'
 }
 
@@ -102,13 +102,10 @@ def search():
                        (SELECT pi.image_url FROM product_image pi WHERE pi.product_id = p.product_id ORDER BY pi.image_id LIMIT 1) as image_url
                 FROM Product p
                 JOIN User u ON p.seller_id = u.userid
-                JOIN Category c ON p.category_id = c.category_id  -- <--- 1. 이 줄 추가
-                WHERE p.title LIKE %s 
-                   OR u.address LIKE %s
-                   OR c.name LIKE %s  -- <--- 2. 이 줄 추가 (카테고리 이름 검색)
+                WHERE p.title LIKE %s OR u.address LIKE %s
                 ORDER BY p.product_id DESC
             """
-            cursor.execute(sql, (search_term, search_term, search_term))
+            cursor.execute(sql, (search_term, search_term))
         
         products = cursor.fetchall()
 
@@ -315,7 +312,7 @@ def product_detail(product_id):
     current_user_id = session.get('user_id')
     
     # 목록에서 들어온 표시 + 세션 중복 방지용
-    src = request.args.get('src') #list면 목록에서 클릭
+    src = request.args.get('src') # list면 목록에서 클릭
     viewed = set(session.get('viewed_once', []))  # 이번 브라우저 세션에서 이미 센 상품id들
 
     conn = None
@@ -334,8 +331,11 @@ def product_detail(product_id):
         cursor.execute("SELECT * FROM product_image WHERE product_id=%s ORDER BY image_id ASC", (product_id,))
         images = cursor.fetchall()
 
-        # 판매자 이름
-        cursor.execute("SELECT user_name FROM User WHERE userid=%s", (product['seller_id'],))
+        # 판매자 정보(아이디 + 이름 둘 다 가져오기)
+        cursor.execute(
+            "SELECT userid, user_name FROM User WHERE userid=%s",
+            (product['seller_id'],)
+        )
         seller = cursor.fetchone()
 
         # 구매후기 (Orders-Reviews)
@@ -368,7 +368,10 @@ def product_detail(product_id):
 
         # 현재 사용자의 위시 여부
         if current_user_id:
-            cursor.execute("SELECT 1 FROM wishlist WHERE userid=%s AND product_id=%s", (current_user_id, product_id))
+            cursor.execute(
+                "SELECT 1 FROM wishlist WHERE userid=%s AND product_id=%s",
+                (current_user_id, product_id)
+            )
             is_wish = cursor.fetchone() is not None
     finally:
         if cursor is not None:
@@ -386,32 +389,6 @@ def product_detail(product_id):
         is_wish=is_wish,
         session=session
     )
-
-@app.post("/product/<int:product_id>/comment")
-def add_comment(product_id):
-    author  = (request.form.get("author") or "익명").strip()
-    content = (request.form.get("content") or "").strip()
-    if not content:
-        # 내용 없으면 상세로 복귀
-        return redirect(url_for("product_detail", product_id=product_id) + "#comments")
-
-    conn = None
-    cursor = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO comment(product_id, author, content) VALUES(%s,%s,%s)",
-            (product_id, author, content)
-        )
-        conn.commit()
-    finally:
-        if cursor is not None:
-            cursor.close()
-        if conn is not None:
-            conn.close()
-
-    return redirect(url_for("product_detail", product_id=product_id) + "#comments")
 
 @app.post("/product/<int:product_id>/wish")
 def add_wish_counter(product_id):
@@ -683,6 +660,61 @@ def notifications_page():
         if conn is not None:
             conn.close()
     return render_template('notifications.html', notifications=notifications, session=session)
+
+# ======================================================================
+#                         판매자 상점(프로필) 페이지
+# ======================================================================
+@app.route('/shop/<int:user_id>')
+def shop_profile(user_id):
+    user = None
+    profile = None
+    selling_products = []
+
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # 상점 주인 정보
+        cursor.execute("SELECT * FROM User WHERE userid=%s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            abort(404)
+
+        # 상점 프로필(자기소개)
+        cursor.execute("SELECT * FROM User_profile WHERE userid=%s", (user_id,))
+        profile = cursor.fetchone()
+
+        # 해당 사용자가 판매중인 상품
+        cursor.execute("""
+            SELECT p.product_id, p.title, CAST(p.price AS UNSIGNED) AS price,
+                   (SELECT pi.image_url
+                      FROM product_image pi
+                     WHERE pi.product_id = p.product_id
+                     ORDER BY pi.image_id
+                     LIMIT 1) AS image_url
+              FROM Product p
+             WHERE p.seller_id = %s
+               AND p.Product_status = '판매중'
+             ORDER BY p.product_id DESC
+             LIMIT 40
+        """, (user_id,))
+        selling_products = cursor.fetchall()
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
+
+    # 내 프로필 템플릿을 재사용
+    return render_template(
+        'profile.html',
+        user=user,
+        profile=profile,
+        selling_products=selling_products,
+        session=session
+    )
 
 # ======================================================================
 #                               앱 실행

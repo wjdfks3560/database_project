@@ -213,7 +213,13 @@
     <div class="grid-col">
       <section class="card info">
         <div class="meta-grid">
-          <div class="meta"><b>판매자</b>{{ seller.user_name }}</div>
+          
+          <div class="meta">
+            <b>판매자</b>
+            <a href="{{ url_for('shop_profile', user_id=seller.userid) }}" class="seller-link">
+              {{ seller.user_name }}
+            </a>
+          </div>
           <div class="meta"><b>상품 상태</b>{{ product.Product_status }}</div>
           <div class="meta"><b>카테고리</b>{{ product.category_name or ('#' ~ product.category_id) }}</div>
         </div>
