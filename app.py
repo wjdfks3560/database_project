@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'root',
+    'password': '0826',
     'database': 'projectdb'
 }
 
@@ -102,10 +102,13 @@ def search():
                        (SELECT pi.image_url FROM product_image pi WHERE pi.product_id = p.product_id ORDER BY pi.image_id LIMIT 1) as image_url
                 FROM Product p
                 JOIN User u ON p.seller_id = u.userid
-                WHERE p.title LIKE %s OR u.address LIKE %s
+                JOIN Category c ON p.category_id = c.category_id  -- <--- 1. 이 줄 추가
+                WHERE p.title LIKE %s 
+                   OR u.address LIKE %s
+                   OR c.name LIKE %s  -- <--- 2. 이 줄 추가 (카테고리 이름 검색)
                 ORDER BY p.product_id DESC
             """
-            cursor.execute(sql, (search_term, search_term))
+            cursor.execute(sql, (search_term, search_term, search_term))
         
         products = cursor.fetchall()
 
