@@ -23,14 +23,20 @@
     padding:0 16px;
   }
 
+  /* 상단 제목 영역 */
   .titlebar{
     display:flex;
     justify-content:space-between;
     align-items:center;
     margin:6px 0 14px;
   }
-  .breadcrumbs{font-size:13px;color:var(--muted)}
-  .titlebar h1{font-size:20px}
+  .breadcrumbs{
+    font-size:13px;
+    color:var(--muted);
+  }
+  .titlebar h1{
+    font-size:20px;
+  }
 
   /* 오른쪽 상단: 찜 / 조회수 */
   .title-right{
@@ -40,8 +46,14 @@
     font-size:13px;
     color:var(--muted);
   }
-  .view{font-size:13px;color:var(--muted)}
-  .zzim-count{font-size:13px;color:var(--muted)}
+  .zzim-count-top{
+    font-size:13px;
+    color:var(--muted);
+  }
+  .view{
+    font-size:13px;
+    color:var(--muted);
+  }
 
   /* 두 컬럼 레이아웃 */
   .grid{
@@ -61,19 +73,10 @@
     border:1px solid var(--line);
     border-radius:14px;
   }
-  .gallery{padding:12px}
-  .thumbs{
-    display:flex;
-    gap:8px;
-    margin-top:10px;
-    flex-wrap:wrap;
-  }
-  .thumbs img{
-    width:84px;
-    height:84px;
-    object-fit:cover;
-    border-radius:8px;
-    border:1px solid var(--line);
+
+  /* 갤러리 영역 */
+  .gallery{
+    padding:12px;
   }
   .photo{
     width:100%;
@@ -90,21 +93,41 @@
     height:100%;
     object-fit:cover;
   }
-
-  .price-card{padding:14px}
-  .info{
-    padding:14px;
+  .thumbs{
     display:flex;
-    flex-direction:column;
-    gap:12px;
+    gap:8px;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+  .thumbs img{
+    width:84px;
+    height:84px;
+    object-fit:cover;
+    border-radius:8px;
+    border:1px solid var(--line);
+  }
+
+  /* 가격 카드 */
+  .price-card{
+    padding:14px;
   }
   .price-row{
     display:flex;
     justify-content:flex-start;
     align-items:center;
   }
-  .price{font-size:22px;font-weight:800}
+  .price{
+    font-size:22px;
+    font-weight:800;
+  }
 
+  /* 오른쪽 정보 카드 */
+  .info{
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
   .meta-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -123,6 +146,18 @@
     margin-bottom:6px;
   }
 
+  /* 판매자 링크 */
+  .seller-link{
+    color:inherit;
+    text-decoration:none;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .seller-link:hover{
+    text-decoration:underline;
+  }
+
+  /* 버튼들 */
   .btns{
     display:flex;
     gap:10px;
@@ -149,6 +184,7 @@
     justify-content:center;
   }
 
+  /* 상품 설명 카드 */
   .desc-card{
     padding:16px;
   }
@@ -177,9 +213,9 @@
       <h1>{{ product.title }}</h1>
     </div>
 
-    <!-- 오른쪽 상단: 찜 / 조회수 나란히 -->
+    <!-- 상단 오른쪽: 찜 / 조회수 -->
     <div class="title-right">
-      <div class="zzim-count">찜 {{ product.wish_count or 0 }}</div>
+      <div class="zzim-count-top">찜 {{ product.wish_count or 0 }}</div>
       <div class="view">조회수 {{ product.view }}</div>
     </div>
   </div>
@@ -209,36 +245,45 @@
       </section>
     </div>
 
-    <!-- 오른쪽: 판매자/상태/버튼/설명 -->
+    <!-- 오른쪽: 판매자/상태/카테고리/버튼/상품정보 -->
     <div class="grid-col">
       <section class="card info">
         <div class="meta-grid">
-          
           <div class="meta">
             <b>판매자</b>
-            <a href="{{ url_for('shop_profile', user_id=seller.userid) }}" class="seller-link">
+            <a href="{{ url_for('shop_profile', user_id=seller.user_id) }}"
+               class="seller-link">
               {{ seller.user_name }}
             </a>
           </div>
-          <div class="meta"><b>상품 상태</b>{{ product.Product_status }}</div>
-          <div class="meta"><b>카테고리</b>{{ product.category_name or ('#' ~ product.category_id) }}</div>
+          <div class="meta">
+            <b>상품 상태</b>
+            {{ product.Product_status }}
+          </div>
+          <div class="meta">
+            <b>카테고리</b>
+            {{ product.category_name or ('#' ~ product.category_id) }}
+          </div>
         </div>
 
         <!-- 찜/구매 버튼 -->
         <div class="btns">
           {% if session.get('user_id') %}
             {% if is_wish %}
-              <form method="POST" action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
+              <form method="POST"
+                    action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
                 <button class="btn btn-like" type="submit">♥ 찜 취소</button>
               </form>
             {% else %}
-              <form method="POST" action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
+              <form method="POST"
+                    action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
                 <button class="btn btn-like" type="submit">♡ 찜하기</button>
               </form>
             {% endif %}
           {% endif %}
 
-          <a href="{{ url_for('payment_page', product_id=product.product_id) }}" class="btn btn-buy">
+          <a href="{{ url_for('payment_page', product_id=product.product_id) }}"
+             class="btn btn-buy">
             구매하기
           </a>
         </div>
