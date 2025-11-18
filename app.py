@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'root',
+    'password': '0826',
     'database': 'projectdb'
 }
 
@@ -336,6 +336,16 @@ def product_detail(product_id):
         product = cursor.fetchone()
         if not product:
             abort(404)
+
+        # product['category_id']를 이용해 Category 테이블에서 이름(name)을 찾습니다.
+        cursor.execute("SELECT name FROM Category WHERE category_id = %s", (product['category_id'],))
+        category_row = cursor.fetchone()
+        
+        # 찾은 이름을 product 정보 안에 'category_name'이라는 이름으로 넣어줍니다.
+        if category_row:
+            product['category_name'] = category_row['name']
+        else:
+            product['category_name'] = "미분류"
 
         # product 정보를 가져온 후, 현재 유저와 판매자 ID 비교
         if product and current_user_id == product['seller_id']:
