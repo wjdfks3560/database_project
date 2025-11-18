@@ -229,13 +229,6 @@
             src="{{ (images and images[0].image_url) or product.image_url or 'https://picsum.photos/900/675?blur' }}"
             alt="상품 이미지">
         </div>
-        {% if images %}
-          <div class="thumbs">
-            {% for img in images %}
-              <img src="{{ img.image_url }}" alt="이미지 썸네일">
-            {% endfor %}
-          </div>
-        {% endif %}
       </section>
 
       <!-- 여기: 찜/구매 버튼 카드로 변경 -->
