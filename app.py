@@ -16,7 +16,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '0826',
+    'password': 'root',
     'database': 'projectdb'
 }
 
@@ -660,6 +660,10 @@ def register_product():
     category_nm = request.form.get("category")       # Category.name 기준
     file        = request.files.get("image")
 
+    print(f"👉 [디버깅] 파일 객체 확인: {file}")  # 1. 파일이 들어왔는지 출력
+    if file:
+        print(f"👉 [디버깅] 파일 이름: {file.filename}") # 2. 파일 이름 확인
+
     # 필수값 검증
     if not title or not description or not price_raw or not category_nm:
         flash("필수 항목이 누락되었습니다.", "warning")
@@ -697,10 +701,15 @@ def register_product():
 
         # 이미지 저장
         if file and file.filename:
+
+            print("👉 [디버깅] 이미지 저장 로직 진입함!") # 3. 저장 시작 알림
+
             ext = file.filename.rsplit(".", 1)[1].lower() if "." in file.filename else "jpg"
             fname = f"{uuid4().hex}.{ext}"
             save_path = os.path.join(UPLOAD_DIR, fname)
             file.save(save_path)
+            print(f"👉 [디버깅] 파일 저장 경로: {save_path}") # 4. 어디에 저장했는지 확인
+
             image_url = f"/static/uploads/{fname}"
 
             cur.execute(
@@ -708,6 +717,16 @@ def register_product():
                 (product_id, image_url)
             )
             conn.commit()
+
+            print("👉 [디버깅] DB INSERT 성공!") # 5. DB 입력 성공 확인
+        else:
+            print("👉 [디버깅] 파일이 없어서 이미지 저장을 건너뜀 (문제 발생 지점!)")
+
+        flash("상품이 등록되었습니다.", "success")
+        return redirect(url_for("product_detail", product_id=product_id))
+
+    except mysql.connector.Error as err:
+        print("DB Error:", err) # 에러가 나면 여기에 찍힘
 
         flash("상품이 등록되었습니다.", "success")
         return redirect(url_for("product_detail", product_id=product_id))
