@@ -107,7 +107,7 @@
     border:1px solid var(--line);
   }
 
-  /* 가격 카드 */
+  /* 가격 카드 / 버튼 카드 공통 패딩 */
   .price-card{
     padding:14px;
   }
@@ -221,7 +221,7 @@
   </div>
 
   <section class="grid">
-    <!-- 왼쪽: 이미지 + 가격 -->
+    <!-- 왼쪽: 이미지 + (아래) 버튼 -->
     <div class="grid-col">
       <section class="card gallery">
         <div class="photo">
@@ -238,16 +238,50 @@
         {% endif %}
       </section>
 
+      <!-- 여기: 찜/구매 버튼 카드로 변경 -->
       <section class="card price-card">
-        <div class="price-row">
-          <div class="price">{{ "{:,}".format(product.price|int) }}원</div>
+        <div class="btns">
+          {% if session.get('user_id') %}
+            {% if is_wish %}
+              <form method="POST"
+                    action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
+                <button class="btn btn-like" type="submit">♥ 찜 취소</button>
+              </form>
+            {% else %}
+              <form method="POST"
+                    action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
+                <button class="btn btn-like" type="submit">♡ 찜하기</button>
+              </form>
+            {% endif %}
+          {% endif %}
+
+          {% if is_seller %}
+            <!-- 내 상품일 때: 비활성화 버튼 -->
+            <button type="button"
+                    class="btn btn-buy"
+                    style="background:#aaa;cursor:default;"
+                    disabled>
+              내 상품 (구매 불가)
+            </button>
+          {% else %}
+            <!-- 구매자일 때: 결제 페이지로 이동 -->
+            <a href="{{ url_for('payment_page', product_id=product.product_id) }}"
+               class="btn btn-buy">
+              구매하기
+            </a>
+          {% endif %}
         </div>
       </section>
     </div>
 
-    <!-- 오른쪽: 판매자/상태/카테고리/버튼/상품정보 -->
+    <!-- 오른쪽: 가격 + 판매자/상태/카테고리 + 상품정보 -->
     <div class="grid-col">
       <section class="card info">
+        <!-- 가격을 오른쪽 정보 카드 상단으로 이동 -->
+        <div class="price-row">
+          <div class="price">{{ "{:,}".format(product.price|int) }}원</div>
+        </div>
+
         <div class="meta-grid">
           <div class="meta">
             <b>판매자</b>
@@ -264,39 +298,6 @@
             <b>카테고리</b>
             {{ product.category_name or ('#' ~ product.category_id) }}
           </div>
-        </div>
-
-        <!-- 찜/구매 버튼 -->
-        <div class="btns">
-          {% if session.get('user_id') %}
-            {% if is_wish %}
-              <form method="POST"
-                    action="{{ url_for('wishlist_remove', product_id=product.product_id) }}">
-                <button class="btn btn-like" type="submit">♥ 찜 취소</button>
-              </form>
-            {% else %}
-              <form method="POST"
-                    action="{{ url_for('wishlist_add', product_id=product.product_id) }}">
-                <button class="btn btn-like" type="submit">♡ 찜하기</button>
-              </form>
-            {% endif %}
-          {% endif %}
-
-           {% if is_seller %}
-          <!-- 내 상품일 때: 비활성화 버튼 -->
-          <button type="button"
-            class="btn btn-buy"
-            style="background:#aaa;cursor:default;"
-            disabled>
-       내 상품 (구매 불가)
-     </button>
-   {% else %}
-     <!-- 구매자일 때: 결제 페이지로 이동 -->
-     <a href="{{ url_for('payment_page', product_id=product.product_id) }}"
-         class="btn btn-buy">
-        구매하기
-      </a>
-        {% endif %}
         </div>
       </section>
 
