@@ -24,12 +24,37 @@
             border-radius: 8px;
         }
 
+        /* ====== 여기부터 제목/뒤로가기 영역 ====== */
+        .header-row{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            border-bottom:2px solid #333;
+            padding-bottom:10px;
+            margin-bottom:20px;
+        }
+
         h1 {
             font-size: 24px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            margin:0;
         }
+
+        .back-button{
+            border:none;
+            background:transparent;
+            padding:0;
+            margin:0;
+            font-size:24px;
+            font-weight:700;
+            color:#456BFF;   /* 이미지랑 비슷한 파란색 */
+            cursor:pointer;
+            line-height:1;
+        }
+
+        .back-button:hover{
+            color:#2744d8;
+        }
+        /* ====== 여기까지 제목/뒤로가기 영역 ====== */
 
         /* 폼 레이아웃 (Flexbox 사용) */
         .form-layout {
@@ -146,8 +171,12 @@
 <body>
 
     <div class="form-container">
-        <h1>상품 정보</h1>
-        <!-- 여기만 변경: url_for('register_product') 사용 -->
+        <!-- 제목 + 뒤로가기 버튼 -->
+        <div class="header-row">
+            <h1>상품 정보</h1>
+            <button type="button" class="back-button" onclick="history.back()">X</button>
+        </div>
+
         <form action="{{ url_for('register_product') }}" method="post" enctype="multipart/form-data">
             <div class="form-layout">
                 <div class="form-left">
@@ -160,21 +189,18 @@
                                     (클릭)
                                 </div>
                             </label>
-                            <!-- name="image" 로 변경 -->
                             <input type="file" id="image-upload" name="image" accept="image/*">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="product-name">상품명</label>
                         <div class="input-wrapper">
-                            <!-- name="title" 로 변경 -->
                             <input type="text" id="product-name" name="title" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="category">카테고리</label>
                         <div class="input-wrapper">
-                            <!-- value 를 Category.name 과 동일한 한글로 사용 -->
                             <select id="category" name="category">
                                 <option value="디지털기기">디지털기기</option>
                                 <option value="가구/인테리어">가구/인테리어</option>
@@ -186,7 +212,6 @@
                     <div class="form-group">
                         <label>상품 상태</label>
                         <div class="input-wrapper status-options">
-                            <!-- 이 값들은 아직 백엔드에서 쓰지 않으니 그냥 두셔도 됩니다 -->
                             <label><input type="radio" name="product_status" value="새상품" checked> 새상품 (미사용)</label>
                             <label><input type="radio" name="product_status" value="사용감 거의 없음"> 사용감 거의 없음</label>
                             <label><input type="radio" name="product_status" value="사용감 많음"> 사용감 많음</label>
@@ -198,14 +223,12 @@
                     <div class="form-group">
                         <label for="description">설명</label>
                         <div class="input-wrapper">
-                            <!-- name="description" 그대로 백엔드와 일치 -->
                             <textarea id="description" name="description" required></textarea>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="price">가격</label>
                         <div class="input-wrapper price-input">
-                            <!-- name="price" 그대로 백엔드와 일치 -->
                             <input type="number" id="price" name="price" placeholder="0" required>
                             <span>원</span>
                         </div>
