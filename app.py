@@ -69,6 +69,46 @@ def report_page():
     return render_template('report.html')
 
 # ======================================================================
+#                       월간 판매 분석 보고서
+# ======================================================================
+@app.route("/analytics/monthly_sales")
+def monthly_sales_report():
+    # 필요시 권한 체크 로직 추가
+    conn = get_db_connection()
+    cur = None
+    sales_data = []
+
+    try:
+        cur = conn.cursor(dictionary=True) 
+        
+        # orders 테이블의 order_date와 product 테이블의 price를 사용하여 집계
+        query = """
+        SELECT
+            DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
+            SUM(p.price) AS total_monthly_sales
+        FROM orders o
+        JOIN product p ON o.product_id = p.product_id
+        WHERE o.order_status = '거래완료' -- 실제 DB의 주문 완료 상태 값으로 변경 필요
+        GROUP BY sales_month
+        ORDER BY sales_month DESC
+        """
+        
+        cur.execute(query)
+        sales_data = cur.fetchall()
+
+    except mysql.connector.Error as err:
+        print("Analytics DB Error:", err)
+        flash("월간 판매 데이터를 가져오는 중 오류가 발생했습니다.", "danger")
+        return redirect(url_for("home")) 
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    # 데이터를 템플릿으로 전달 (이동할 페이지)
+    return render_template("monthly_sales_report.html", sales_data=sales_data)
+
+# ======================================================================
 #                                 검색 기능
 # ======================================================================
 @app.route('/search')
