@@ -488,8 +488,20 @@ def payment_page(product_id):
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
+        sql_product = """
+            SELECT p.*, 
+                   (SELECT pi.image_url 
+                      FROM product_image pi 
+                     WHERE pi.product_id = p.product_id 
+                     ORDER BY pi.image_id ASC 
+                     LIMIT 1) AS image_url
+              FROM Product p
+             WHERE p.product_id = %s
+        """
+
         # 2. 상품 정보 조회: URL로 받은 product_id를 사용해 DB에서 상품 정보를 가져옵니다.
-        cursor.execute("SELECT * FROM Product WHERE product_id=%s", (product_id,))
+        cursor.execute(sql_product, (product_id,))
+        #cursor.execute("SELECT * FROM Product WHERE product_id=%s", (product_id,))
         product = cursor.fetchone()
 
         # 3. 본인 상품 구매 방지 확인
