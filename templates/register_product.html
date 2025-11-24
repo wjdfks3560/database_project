@@ -1,272 +1,253 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>물품 등록 페이지</title>
-    <style>
-        /* 기본 스타일 */
-        body {
-            font-family: 'Malgun Gothic', sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>물품 등록 페이지</title>
+<style>
+    body {
+        font-family: 'Malgun Gothic', sans-serif;
+        background-color: #f4f4f4;
+        display: flex; justify-content: center; align-items: center;
+        padding: 40px;
+    }
+    .form-container {
+        width: 1000px; background-color: #fff;
+        padding: 30px; border: 2px solid #ddd; border-radius: 8px;
+    }
 
-        /* 폼 전체를 감싸는 컨테이너 */
-        .form-container {
-            width: 1000px;
-            background-color: white;
-            padding: 30px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-        }
+    .header-row{
+        display:flex; justify-content:space-between; align-items:center;
+        border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:20px;
+    }
+    h1 { font-size:24px; margin:0; }
+    .back-button{
+        border:none; background:transparent; padding:0; margin:0;
+        font-size:24px; font-weight:700; color:#456BFF; cursor:pointer; line-height:1;
+    }
+    .back-button:hover{ color:#2744d8; }
 
-        /* ====== 여기부터 제목/뒤로가기 영역 ====== */
-        .header-row{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            border-bottom:2px solid #333;
-            padding-bottom:10px;
-            margin-bottom:20px;
-        }
+    .form-layout { display:flex; gap:30px; }
+    .form-left { width:65%; display:flex; flex-direction:column; gap:20px; }
+    .form-right{ width:35%; display:flex; flex-direction:column; gap:20px; }
 
-        h1 {
-            font-size: 24px;
-            margin:0;
-        }
+    .form-group { display:flex; }
+    .form-group label { width:100px; font-weight:bold; padding-top:8px; flex-shrink:0; }
+    .form-group .input-wrapper { width:100%; }
 
-        .back-button{
-            border:none;
-            background:transparent;
-            padding:0;
-            margin:0;
-            font-size:24px;
-            font-weight:700;
-            color:#456BFF;   /* 이미지랑 비슷한 파란색 */
-            cursor:pointer;
-            line-height:1;
-        }
+    input[type="text"], select, textarea, input[type="number"]{
+        width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;
+        font-size:16px; box-sizing:border-box;
+    }
+    textarea{ height:300px; resize:vertical; }
 
-        .back-button:hover{
-            color:#2744d8;
-        }
-        /* ====== 여기까지 제목/뒤로가기 영역 ====== */
+    /* ===== 이미지 업로드(최대 3장) ===== */
+    .image-grid{
+        display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
+    }
+    .image-upload-box{
+        position:relative;
+        width:100%; height:180px; border:2px dashed #ccc; border-radius:6px;
+        display:flex; justify-content:center; align-items:center;
+        text-align:center; color:#999; user-select:none;
+        background-size:cover; background-position:center;
+    }
+    .image-upload-box.placeholder{ cursor:pointer; }
+    .remove-btn{
+        position:absolute; top:6px; right:6px;
+        width:26px; height:26px; border:none; border-radius:50%;
+        background:rgba(0,0,0,.55); color:#fff; font-weight:700;
+        line-height:26px; text-align:center; cursor:pointer;
+    }
 
-        /* 폼 레이아웃 (Flexbox 사용) */
-        .form-layout {
-            display: flex;
-            gap: 30px;
-        }
+    input[type="file"]{ display:none; }
 
-        .form-left, .form-right {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+    .status-options label { width:auto; margin-right:20px; font-weight:normal; }
+    .status-options input[type="radio"]{ margin-right:5px; }
 
-        .form-left {
-            width: 65%;
-        }
+    .price-input{ display:flex; align-items:center; }
+    .price-input input{ text-align:right; }
+    .price-input span{ margin-left:10px; font-weight:bold; }
 
-        .form-right {
-            width: 35%;
-        }
-
-        /* 폼 그룹 스타일 */
-        .form-group {
-            display: flex;
-        }
-        
-        .form-group label {
-            width: 100px;
-            font-weight: bold;
-            padding-top: 8px;
-            flex-shrink: 0;
-        }
-
-        .form-group .input-wrapper {
-            width: 100%;
-        }
-
-        /* 입력 요소 스타일 */
-        input[type="text"], select, textarea, input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        
-        textarea {
-            height: 300px;
-            resize: vertical;
-        }
-
-        /* 이미지 업로드 */
-        .image-upload-box {
-            width: 200px;
-            height: 200px;
-            border: 2px dashed #ccc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            color: #999;
-            cursor: pointer;
-        }
-        
-        input[type="file"] {
-            display: none;
-        }
-
-        /* 상품 상태 (라디오 버튼) */
-        .status-options label {
-            width: auto;
-            margin-right: 20px;
-            font-weight: normal;
-        }
-        .status-options input[type="radio"] {
-            margin-right: 5px;
-        }
-
-        /* 가격 입력 */
-        .price-input {
-            display: flex;
-            align-items: center;
-        }
-
-        .price-input input {
-            text-align: right;
-        }
-
-        .price-input span {
-            margin-left: 10px;
-            font-weight: bold;
-        }
-
-        /* 등록하기 버튼 */
-        .submit-button {
-            width: 100%;
-            padding: 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .submit-button:hover {
-            background-color: #0056b3;
-        }
-
-    </style>
+    .submit-button{
+        width:100%; padding:15px; background:#007bff; color:#fff;
+        border:none; border-radius:4px; font-size:18px; font-weight:bold;
+        cursor:pointer; margin-top:10px;
+    }
+    .submit-button:hover{ background:#0056b3; }
+</style>
 </head>
 <body>
-
-    <div class="form-container">
-        <!-- 제목 + 뒤로가기 버튼 -->
-        <div class="header-row">
-            <h1>상품 정보</h1>
-            <button type="button" class="back-button" onclick="history.back()">X</button>
-        </div>
-
-        <form action="{{ url_for('register_product') }}" method="post" enctype="multipart/form-data">
-            <div class="form-layout">
-                <div class="form-left">
-                    <div class="form-group">
-                        <label>상품 이미지</label>
-                        <div class="input-wrapper">
-                            <label for="image-upload" class="image-upload-box">
-                                <div>
-                                    이미지 등록<br>
-                                    (클릭)
-                                </div>
-                            </label>
-                            <input type="file" id="image-upload" name="image" accept="image/*">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-name">상품명</label>
-                        <div class="input-wrapper">
-                            <input type="text" id="product-name" name="title" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="category">카테고리</label>
-                        <div class="input-wrapper">
-                            <select id="category" name="category">
-                                <option value="디지털기기">디지털기기</option>
-                                <option value="가구/인테리어">가구/인테리어</option>
-                                <option value="의류/잡화">의류/잡화</option>
-                                <option value="도서/티켓/음반">도서/티켓/음반</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>상품 상태</label>
-                        <div class="input-wrapper status-options">
-                            <label><input type="radio" name="product_status" value="새상품" checked> 새상품 (미사용)</label>
-                            <label><input type="radio" name="product_status" value="사용감 거의 없음"> 사용감 거의 없음</label>
-                            <label><input type="radio" name="product_status" value="사용감 많음"> 사용감 많음</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-right">
-                    <div class="form-group">
-                        <label for="description">설명</label>
-                        <div class="input-wrapper">
-                            <textarea id="description" name="description" required></textarea>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="price">가격</label>
-                        <div class="input-wrapper price-input">
-                            <input type="number" id="price" name="price" placeholder="0" required>
-                            <span>원</span>
-                        </div>
-                    </div>
-                    <button type="submit" class="submit-button">등록하기</button>
-                </div>
-            </div>
-        </form>
+<div class="form-container">
+    <div class="header-row">
+        <h1>상품 정보</h1>
+        <button type="button" class="back-button" onclick="history.back()">X</button>
     </div>
 
-    <script>
-    // 1. 파일 선택 input과 미리보기를 띄울 박스를 가져옴
-    const fileInput = document.getElementById('image-upload');
-    const previewBox = document.querySelector('.image-upload-box');
+    <!-- multipart 필수 -->
+    <form action="{{ url_for('register_product') }}" method="post" enctype="multipart/form-data">
+        <div class="form-layout">
+            <div class="form-left">
+                <div class="form-group">
+                    <label>상품 이미지</label>
+                    <div class="input-wrapper">
+                        <!-- 선택 누적을 위해 grid는 div, 별도의 label은 '추가' 버튼 역할 -->
+                        <div class="image-grid" id="image-grid">
+                            <div class="image-upload-box placeholder" id="add-box">
+                                이미지 등록<br>(최대 3장)
+                            </div>
+                            <div class="image-upload-box placeholder"></div>
+                            <div class="image-upload-box placeholder"></div>
+                        </div>
+                        <!-- ✅ 멀티 업로드 + name="images" -->
+                        <input type="file" id="images" name="images" accept="image/*" multiple>
+                        <small style="color:#666;">최대 3장, 이미지 파일만 업로드 가능합니다.</small>
+                    </div>
+                </div>
 
-    // 2. 사용자가 파일을 선택(change)했을 때 실행되는 함수
-    fileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0]; // 선택된 파일 가져오기
+                <div class="form-group">
+                    <label for="product-name">상품명</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="product-name" name="title" required>
+                    </div>
+                </div>
 
-        if (file) {
-            const reader = new FileReader(); // 파일을 읽는 도구 생성
+                <div class="form-group">
+                    <label for="category">카테고리</label>
+                    <div class="input-wrapper">
+                        <select id="category" name="category">
+                            <option value="디지털기기">디지털기기</option>
+                            <option value="가구/인테리어">가구/인테리어</option>
+                            <option value="의류/잡화">의류/잡화</option>
+                            <option value="도서/티켓/음반">도서/티켓/음반</option>
+                        </select>
+                    </div>
+                </div>
 
-            // 파일 읽기가 완료되면 실행될 코드
-            reader.onload = function(e) {
-                // 박스의 배경 이미지로 설정
-                previewBox.style.backgroundImage = `url(${e.target.result})`;
-                previewBox.style.backgroundSize = 'cover';   // 박스 꽉 차게
-                previewBox.style.backgroundPosition = 'center'; // 중앙 정렬
-                previewBox.style.border = 'none'; // 테두리 없애기 (깔끔하게)
-                
-                // "이미지 등록 (클릭)" 글씨 안 보이게 처리
-                previewBox.innerHTML = ''; 
-            }
+                <div class="form-group">
+                    <label>상품 상태</label>
+                    <div class="input-wrapper status-options">
+                        <label><input type="radio" name="product_status" value="새상품" checked> 새상품 (미사용)</label>
+                        <label><input type="radio" name="product_status" value="사용감 거의 없음"> 사용감 거의 없음</label>
+                        <label><input type="radio" name="product_status" value="사용감 많음"> 사용감 많음</label>
+                    </div>
+                </div>
+            </div>
 
-            reader.readAsDataURL(file); // 파일을 URL 형태로 읽어라 명령
-        }
+            <div class="form-right">
+                <div class="form-group">
+                    <label for="description">설명</label>
+                    <div class="input-wrapper">
+                        <textarea id="description" name="description" required></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="price">가격</label>
+                    <div class="input-wrapper price-input">
+                        <input type="number" id="price" name="price" placeholder="0" required>
+                        <span>원</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-button">등록하기</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+  const input   = document.getElementById('images');
+  const grid    = document.getElementById('image-grid');
+  const addBox  = document.getElementById('add-box');
+
+  // 선택 누적을 위한 버퍼
+  let selectedFiles = [];
+
+  // 파일을 input.files에 반영
+  function syncInputFiles() {
+    const dt = new DataTransfer();
+    selectedFiles.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+  }
+
+  // 미리보기 렌더링
+  function renderPreview() {
+    grid.innerHTML = '';
+
+    // 선택된 파일 미리보기
+    selectedFiles.forEach((file, idx) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const box = document.createElement('div');
+        box.className = 'image-upload-box';
+        box.style.backgroundImage = `url(${ev.target.result})`;
+        box.style.border = 'none';
+
+        // 삭제 버튼
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.type = 'button';
+        btn.textContent = '×';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          selectedFiles.splice(idx, 1);
+          syncInputFiles();
+          renderPreview();
+        });
+
+        box.appendChild(btn);
+        grid.appendChild(box);
+      };
+      reader.readAsDataURL(file);
     });
-</script>
 
+    // 남은 칸은 플레이스홀더로 채우기(총 3칸 유지)
+    const remain = 3 - selectedFiles.length;
+    for (let i = 0; i < remain; i++) {
+      const ph = document.createElement('div');
+      ph.className = 'image-upload-box placeholder';
+      ph.innerHTML = '이미지 등록<br>(클릭)';
+      ph.addEventListener('click', () => {
+        input.click();
+      });
+      grid.appendChild(ph);
+    }
+  }
+
+  // 추가 박스 클릭 → 파일 선택창
+  addBox?.addEventListener('click', () => input.click());
+
+  // 파일 선택 시: 기존 선택 + 신규 선택 누적, 3장 초과 차단
+  input.addEventListener('change', (e) => {
+    const picked = Array.from(e.target.files || []);
+
+    // 중복 제거(파일명+크기+mtime 기준)
+    const sig = f => `${f.name}__${f.size}__${f.lastModified}`;
+    const exists = new Set(selectedFiles.map(sig));
+
+    picked.forEach(f => {
+      if (selectedFiles.length < 3) {
+        const key = sig(f);
+        if (!exists.has(key)) {
+          selectedFiles.push(f);
+          exists.add(key);
+        }
+      }
+    });
+
+    if (picked.length && selectedFiles.length > 3) {
+      alert('이미지는 최대 3장까지 업로드 가능합니다.');
+      selectedFiles = selectedFiles.slice(0, 3);
+    }
+
+    syncInputFiles();
+    renderPreview();
+  });
+
+  // 초기 렌더
+  renderPreview();
+</script>
 </body>
 </html>

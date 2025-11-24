@@ -358,12 +358,11 @@ def product_detail(product_id):
     comments = []
     is_wish = False
     current_user_id = session.get('user_id')
-
     is_seller = False
-    
+
     # 목록에서 들어온 표시 + 세션 중복 방지용
-    src = request.args.get('src') # list면 목록에서 클릭
-    viewed = set(session.get('viewed_once', []))  # 이번 브라우저 세션에서 이미 센 상품id들
+    src = request.args.get('src')  # 'list'면 목록에서 클릭
+    viewed = set(session.get('viewed_once', []))  # 이번 세션에서 이미 센 product_id들
 
     conn = None
     cursor = None
@@ -372,48 +371,56 @@ def product_detail(product_id):
         cursor = conn.cursor(dictionary=True)
 
         # 상세 정보
-        cursor.execute("SELECT * FROM Product WHERE product_id=%s", (product_id,))
+        cursor.execute("SELECT * FROM `Product` WHERE `product_id`=%s", (product_id,))
         product = cursor.fetchone()
         if not product:
             abort(404)
 
-        # product['category_id']를 이용해 Category 테이블에서 이름(name)을 찾습니다.
-        cursor.execute("SELECT name FROM Category WHERE category_id = %s", (product['category_id'],))
+        # 카테고리명 주입
+        cursor.execute("SELECT `name` FROM `Category` WHERE `category_id`=%s", (product['category_id'],))
         category_row = cursor.fetchone()
-        
-        # 찾은 이름을 product 정보 안에 'category_name'이라는 이름으로 넣어줍니다.
-        if category_row:
-            product['category_name'] = category_row['name']
-        else:
-            product['category_name'] = "미분류"
+        product['category_name'] = category_row['name'] if category_row else "미분류"
 
-        # product 정보를 가져온 후, 현재 유저와 판매자 ID 비교
-        if product and current_user_id == product['seller_id']:
-            is_seller = True    
+        # 판매자 여부 플래그
+        if current_user_id == product['seller_id']:
+            is_seller = True
 
-        # 대표/추가 이미지
-        cursor.execute("SELECT * FROM product_image WHERE product_id=%s ORDER BY image_id ASC", (product_id,))
+        # 대표/추가 이미지 (seq가 있으면 seq→image_id, 없으면 image_id만)
+        try:
+            cursor.execute("""
+                SELECT `image_id`,`product_id`,`image_url`
+                FROM `product_image`
+                WHERE `product_id`=%s
+                ORDER BY `seq` ASC, `image_id` ASC
+                LIMIT 3
+            """, (product_id,))
+        except mysql.connector.Error:
+            cursor.execute("""
+                SELECT `image_id`,`product_id`,`image_url`
+                FROM `product_image`
+                WHERE `product_id`=%s
+                ORDER BY `image_id` ASC
+                LIMIT 3
+            """, (product_id,))
         images = cursor.fetchall()
 
-        # 판매자 정보(아이디 + 이름 둘 다 가져오기)
-        cursor.execute(
-            "SELECT userid, user_name FROM User WHERE userid=%s",
-            (product['seller_id'],)
-        )
+        # 판매자 정보
+        cursor.execute("SELECT `userid`, `user_name` FROM `User` WHERE `userid`=%s", (product['seller_id'],))
         seller = cursor.fetchone()
 
-        # 구매후기 (Orders-Reviews)
+        # 구매후기 (예시 스키마 유지)
         cursor.execute("""
             SELECT r.rating, r.comment, u.user_name AS buyer_name
-            FROM Reviews r JOIN User u ON r.buyer_userid=u.userid
-            WHERE r.orderid IN (SELECT orderid FROM Orders WHERE product_id=%s)
+            FROM `Reviews` r
+            JOIN `User` u ON r.buyer_userid = u.userid
+            WHERE r.orderid IN (SELECT orderid FROM `Orders` WHERE product_id=%s)
         """, (product_id,))
         reviews = cursor.fetchall()
 
-        # 상세용 댓글 테이블(comment)도 함께 조회
+        # 댓글
         cursor.execute("""
             SELECT author, content, created_at
-            FROM comment
+            FROM `comment`
             WHERE product_id=%s
             ORDER BY id DESC
             LIMIT 50
@@ -423,20 +430,21 @@ def product_detail(product_id):
         # ★ 조회수 증가: '목록에서 클릭해 들어온 최초 1회'만
         if src == 'list' and product_id not in viewed:
             cursor.execute(
-                "UPDATE Product SET view = COALESCE(view,0) + 1 WHERE product_id=%s",
+                "UPDATE `Product` SET `view` = COALESCE(`view`,0) + 1 WHERE `product_id`=%s",
                 (product_id,)
             )
-        conn.commit()
-        viewed.add(product_id)
-        session['viewed_once'] = list(viewed)
+            conn.commit()
+            viewed.add(product_id)
+            session['viewed_once'] = list(viewed)
 
         # 현재 사용자의 위시 여부
         if current_user_id:
             cursor.execute(
-                "SELECT 1 FROM wishlist WHERE userid=%s AND product_id=%s",
+                "SELECT 1 FROM `wishlist` WHERE `userid`=%s AND `product_id`=%s",
                 (current_user_id, product_id)
             )
             is_wish = cursor.fetchone() is not None
+
     finally:
         if cursor is not None:
             cursor.close()
@@ -457,13 +465,16 @@ def product_detail(product_id):
 
 @app.post("/product/<int:product_id>/wish")
 def add_wish_counter(product_id):
-    """개별 사용자 찜(wishlist)와 별개로 Product.wish_count 자체를 +1 하는 단순 카운터"""
+    """개별 사용자 찜(wishlist)와 별개로 Product.wish_count 자체를 +1"""
     conn = None
     cursor = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("UPDATE Product SET wish_count = COALESCE(wish_count,0)+1 WHERE product_id=%s", (product_id,))
+        cursor.execute(
+            "UPDATE `Product` SET `wish_count` = COALESCE(`wish_count`,0)+1 WHERE `product_id`=%s",
+            (product_id,)
+        )
         conn.commit()
     finally:
         if cursor is not None:
@@ -701,7 +712,7 @@ def register_product():
         flash("로그인 후 이용 가능합니다.", "warning")
         return redirect(url_for("login_page"))
     
-    # GET: 등록 페이지 렌더(템플릿이 있다면)
+    # GET: 등록 페이지 렌더
     if request.method == "GET":
         return render_template("register_product.html")
 
@@ -709,12 +720,15 @@ def register_product():
     title       = (request.form.get("title") or "").strip()
     description = (request.form.get("description") or "").strip()
     price_raw   = request.form.get("price")
-    category_nm = request.form.get("category")       # Category.name 기준
-    file        = request.files.get("image")
+    category_nm = request.form.get("category")
 
-    print(f"👉 [디버깅] 파일 객체 확인: {file}")  # 1. 파일이 들어왔는지 출력
-    if file:
-        print(f"👉 [디버깅] 파일 이름: {file.filename}") # 2. 파일 이름 확인
+    # ✅ 여러 파일 받기 (템플릿: name="images" multiple)
+    files = [f for f in request.files.getlist("images") if f and f.filename]
+    # (하위호환) 만약 단일 name="image"로 올 수도 있으니 보조 처리
+    if not files:
+        single = request.files.get("image")
+        if single and single.filename:
+            files = [single]
 
     # 필수값 검증
     if not title or not description or not price_raw or not category_nm:
@@ -730,6 +744,13 @@ def register_product():
         flash("가격 형식이 올바르지 않습니다.", "warning")
         return redirect(url_for("register_product"))
 
+    # 이미지 개수 제한
+    if len(files) > 3:
+        flash("이미지는 최대 3장까지 업로드 가능합니다.", "warning")
+        return redirect(url_for("register_product"))
+
+    ALLOWED_EXT = {"jpg", "jpeg", "png", "gif", "webp"}
+
     conn = get_db_connection()
     cur = None
     try:
@@ -738,59 +759,54 @@ def register_product():
             flash(f"카테고리 [{category_nm}] 가 존재하지 않습니다. Category 테이블을 확인하세요.", "warning")
             return redirect(url_for("register_product"))
 
-        # 로그인 연동 전이면 seller_id 임시 1, 로그인 시 세션 사용
         seller_id = session.get("user_id", 1)
-        product_status = "판매중"
+        product_status = "판매중"  # (폼의 상태값을 쓰려면 request.form.get('product_status')로 교체)
 
         cur = conn.cursor()
+        # 1) 상품 생성
         cur.execute("""
             INSERT INTO Product
             (seller_id, category_id, title, description, price, view, wish_count, Product_status)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
         """, (seller_id, category_id, title, description, price, 0, 0, product_status))
-        conn.commit()
         product_id = cur.lastrowid
 
-        # 이미지 저장
-        if file and file.filename:
-
-            print("👉 [디버깅] 이미지 저장 로직 진입함!") # 3. 저장 시작 알림
-
-            ext = file.filename.rsplit(".", 1)[1].lower() if "." in file.filename else "jpg"
+        # 2) 이미지 저장
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        image_rows = []
+        for idx, f in enumerate(files, start=1):   # ✅ seq = 1,2,3...
+            ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "jpg"
+            if ext not in ALLOWED_EXT:
+                raise ValueError(f"지원하지 않는 파일 형식입니다: {f.filename}")
             fname = f"{uuid4().hex}.{ext}"
             save_path = os.path.join(UPLOAD_DIR, fname)
-            file.save(save_path)
-            print(f"👉 [디버깅] 파일 저장 경로: {save_path}") # 4. 어디에 저장했는지 확인
+            f.save(save_path)
+            image_rows.append((product_id, idx, f"/static/uploads/{fname}"))
 
-            image_url = f"/static/uploads/{fname}"
-
-            cur.execute(
-                "INSERT INTO product_image (product_id, image_url) VALUES (%s, %s)",
-                (product_id, image_url)
+        if image_rows:
+            cur.executemany(
+                "INSERT INTO product_image (product_id, seq, image_url) VALUES (%s, %s, %s)",
+                image_rows
             )
-            conn.commit()
 
-            print("👉 [디버깅] DB INSERT 성공!") # 5. DB 입력 성공 확인
-        else:
-            print("👉 [디버깅] 파일이 없어서 이미지 저장을 건너뜀 (문제 발생 지점!)")
 
-        flash("상품이 등록되었습니다.", "success")
-        return redirect(url_for("product_detail", product_id=product_id))
-
-    except mysql.connector.Error as err:
-        print("DB Error:", err) # 에러가 나면 여기에 찍힘
+        # 3) 커밋
+        conn.commit()
 
         flash("상품이 등록되었습니다.", "success")
         return redirect(url_for("product_detail", product_id=product_id))
 
-    except mysql.connector.Error as err:
-        print("DB Error:", err)
-        flash("서버 오류가 발생했습니다.", "danger")
+    except (mysql.connector.Error, Exception) as err:
+        # 에러 시 반드시 롤백
+        print("Error in register_product:", err)
+        conn.rollback()
+        flash("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", "danger")
         return redirect(url_for("register_product"))
     finally:
         if cur is not None:
             cur.close()
         conn.close()
+
 
 # ======================================================================
 #                           내 주문 / 프로필 / 알림

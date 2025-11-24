@@ -46,14 +46,8 @@
     font-size:13px;
     color:var(--muted);
   }
-  .zzim-count-top{
-    font-size:13px;
-    color:var(--muted);
-  }
-  .view{
-    font-size:13px;
-    color:var(--muted);
-  }
+  .zzim-count-top{ font-size:13px; color:var(--muted); }
+  .view{ font-size:13px; color:var(--muted); }
 
   /* 두 컬럼 레이아웃 */
   .grid{
@@ -75,9 +69,7 @@
   }
 
   /* 갤러리 영역 */
-  .gallery{
-    padding:12px;
-  }
+  .gallery{ padding:12px; }
   .photo{
     width:100%;
     aspect-ratio:4/3;
@@ -105,12 +97,16 @@
     object-fit:cover;
     border-radius:8px;
     border:1px solid var(--line);
+    cursor:pointer;               /* 추가 */
+  }
+  /* 썸네일 활성 표시 (추가) */
+  .thumbs img.active{
+    outline:3px solid var(--brand);
+    box-shadow:0 0 0 2px #fff inset;
   }
 
   /* 가격 카드 / 버튼 카드 공통 패딩 */
-  .price-card{
-    padding:14px;
-  }
+  .price-card{ padding:14px; }
   .price-row{
     display:flex;
     justify-content:flex-start;
@@ -153,15 +149,10 @@
     font-weight:600;
     cursor:pointer;
   }
-  .seller-link:hover{
-    text-decoration:underline;
-  }
+  .seller-link:hover{ text-decoration:underline; }
 
   /* 버튼들 */
-  .btns{
-    display:flex;
-    gap:10px;
-  }
+  .btns{ display:flex; gap:10px; }
   .btn{
     border:none;
     border-radius:12px;
@@ -185,20 +176,15 @@
   }
 
   /* 상품 설명 카드 */
-  .desc-card{
-    padding:16px;
-  }
-  .desc-card h3{
-    font-size:16px;
-    margin-bottom:8px;
-  }
+  .desc-card{ padding:16px; }
+  .desc-card h3{ font-size:16px; margin-bottom:8px; }
   .desc{
     white-space:pre-wrap;
     line-height:1.6;
   }
 
   @media(max-width:900px){
-    .grid{grid-template-columns:1fr}
+    .grid{ grid-template-columns:1fr }
   }
 </style>
 {% endblock %}
@@ -223,15 +209,30 @@
   <section class="grid">
     <!-- 왼쪽: 이미지 + (아래) 버튼 -->
     <div class="grid-col">
+      <!-- 갤러리: 대표 + 썸네일들 -->
       <section class="card gallery">
+        <!-- 대표 이미지 -->
         <div class="photo">
-          <img
-            src="{{ (images and images[0].image_url) or product.image_url or 'https://picsum.photos/900/675?blur' }}"
-            alt="상품 이미지">
+          <img id="main-photo"
+               src="{{ (images and images[0].image_url) or product.image_url or 'https://picsum.photos/900/675?blur' }}"
+               alt="{{ product.title }} 이미지">
         </div>
+
+        <!-- 썸네일들 -->
+        {% if images and images|length >= 1 %}
+        <div class="thumbs" id="thumbs">
+          {% for im in images %}
+            <img src="{{ im.image_url }}"
+                 data-src="{{ im.image_url }}"
+                 alt="썸네일 {{ loop.index }}"
+                 loading="lazy"
+                 class="{% if loop.first %}active{% endif %}">
+          {% endfor %}
+        </div>
+        {% endif %}
       </section>
 
-      <!-- 여기: 찜/구매 버튼 카드로 변경 -->
+      <!-- 찜/구매 버튼 카드 -->
       <section class="card price-card">
         <div class="btns">
           {% if session.get('user_id') %}
@@ -270,7 +271,7 @@
     <!-- 오른쪽: 가격 + 판매자/상태/카테고리 + 상품정보 -->
     <div class="grid-col">
       <section class="card info">
-        <!-- 가격을 오른쪽 정보 카드 상단으로 이동 -->
+        <!-- 가격 -->
         <div class="price-row">
           <div class="price">{{ "{:,}".format(product.price|int) }}원</div>
         </div>
@@ -301,4 +302,23 @@
     </div>
   </section>
 </main>
+
+<!-- 썸네일 클릭 시 대표 이미지 교체 -->
+<script>
+  (function(){
+    const main = document.getElementById('main-photo');
+    const thumbsWrap = document.getElementById('thumbs');
+    if(!main || !thumbsWrap) return;
+
+    thumbsWrap.addEventListener('click', (e) => {
+      const t = e.target;
+      if(t.tagName !== 'IMG') return;
+      const url = t.dataset.src || t.src;
+      if(url) main.src = url;
+
+      thumbsWrap.querySelectorAll('img').forEach(img => img.classList.remove('active'));
+      t.classList.add('active');
+    });
+  })();
+</script>
 {% endblock %}
